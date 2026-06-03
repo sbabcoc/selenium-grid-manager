@@ -1,0 +1,132 @@
+ext.buildRoot = layout.projectDirectory.dir('build-s4')
+ext.libsDir   = buildRoot.dir('libs')
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', 'src/selenium4/java']
+            destinationDirectory = buildRoot.dir('classes')
+        }
+        output.resourcesDir = buildRoot.dir('classes')
+    }
+    test {
+        java {
+            destinationDirectory = buildRoot.dir('test-classes')
+        }
+    }
+}
+
+/* Per-browser runtime configurations - each extends runtimeClasspath
+ * to inherit core transitive dependencies and add browser-specific ones.
+ * Deferred to afterEvaluate to ensure runtimeClasspath is fully configured. */
+configurations {
+    chromeRuntime
+    edgeRuntime
+    espressoRuntime
+    firefoxRuntime
+    htmlunitRuntime
+    mac2Runtime
+    safariRuntime
+    uiautomator2Runtime
+    windowsRuntime
+    xcuitestRuntime
+}
+
+afterEvaluate {
+    ['chrome', 'edge', 'espresso', 'firefox', 'htmlunit',
+     'mac2', 'safari', 'uiautomator2', 'windows', 'xcuitest'].each { browser ->
+        configurations["${browser}Runtime"].extendsFrom(configurations.runtimeClasspath)
+    }
+}
+
+dependencies {
+    api platform("com.nordstrom.ui-tools:selenium-bom-s4:${archiveVer.split('-')[0]}")
+
+    // core runtime dependencies
+    api 'com.nordstrom.ui-tools:selenium-foundation'
+    api 'org.seleniumhq.selenium:selenium-grid'
+    api 'org.seleniumhq.selenium:selenium-support'
+    api 'org.apache.httpcomponents:httpclient'
+    api 'org.apache.commons:commons-lang3'
+    api 'com.beust:jcommander'
+    api 'io.appium:java-client'
+
+    // compile-time only: all browser drivers available for plugin compilation
+    compileOnly 'org.seleniumhq.selenium:selenium-chrome-driver'
+    compileOnly 'org.seleniumhq.selenium:selenium-edge-driver'
+    compileOnly 'org.seleniumhq.selenium:selenium-firefox-driver'
+    compileOnly 'org.seleniumhq.selenium:selenium-safari-driver'
+    compileOnly 'com.nordstrom.ui-tools:htmlunit-remote'
+    compileOnly 'org.seleniumhq.selenium:htmlunit3-driver'
+    compileOnly 'org.htmlunit:htmlunit'
+
+    // per-browser runtime configurations - only loaded when browser is selected
+    chromeRuntime 'org.seleniumhq.selenium:selenium-chrome-driver'
+    edgeRuntime 'org.seleniumhq.selenium:selenium-edge-driver'
+    firefoxRuntime 'org.seleniumhq.selenium:selenium-firefox-driver'
+    safariRuntime 'org.seleniumhq.selenium:selenium-safari-driver'
+    htmlunitRuntime 'com.nordstrom.ui-tools:htmlunit-remote'
+    htmlunitRuntime 'org.seleniumhq.selenium:htmlunit3-driver'
+    htmlunitRuntime 'org.htmlunit:htmlunit'
+    espressoRuntime 'io.appium:java-client'
+    mac2Runtime 'io.appium:java-client'
+    uiautomator2Runtime 'io.appium:java-client'
+    windowsRuntime 'io.appium:java-client'
+    xcuitestRuntime 'io.appium:java-client'
+
+    // test dependencies
+    testImplementation 'com.nordstrom.tools:junit-foundation'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.seleniumhq.selenium:selenium-chrome-driver'
+    testImplementation 'org.seleniumhq.selenium:selenium-edge-driver'
+    testImplementation 'org.seleniumhq.selenium:selenium-firefox-driver'
+    testImplementation 'org.seleniumhq.selenium:selenium-safari-driver'
+    testImplementation 'com.nordstrom.ui-tools:htmlunit-remote'
+    testImplementation 'io.appium:java-client'
+}
+
+/* Per-browser test tasks */
+def browsers = [
+    chrome          : [test: 'ChromeGridTest',          settings: 'chrome'],
+    edge            : [test: 'EdgeGridTest',             settings: 'edge'],
+    espresso        : [test: 'EspressoGridTest',         settings: 'espresso'],
+    firefox         : [test: 'FirefoxGridTest',          settings: 'firefox'],
+    htmlunit        : [test: 'HtmlUnitGridTest',         settings: 'htmlunit'],
+    mac2            : [test: 'Mac2GridTest',             settings: 'mac2'],
+    safari          : [test: 'SafariGridTest',           settings: 'safari'],
+    uiautomator2    : [test: 'UiAutomator2GridTest',     settings: 'uiautomator2'],
+    androidchrome   : [test: 'AndroidChromeGridTest',    settings: 'uiautomator2'],
+    iossafari       : [test: 'IOSSafariGridTest',        settings: 'xcuitest'],
+    windows         : [test: 'WindowsGridTest',          settings: 'windows'],
+    xcuitest        : [test: 'XCUITestGridTest',         settings: 'xcuitest']
+]
+
+browsers.each { browser, cfg ->
+    tasks.register("test${browser.capitalize()}", Test) {
+        group = 'Verification'
+        description = "Run Grid tests for ${browser}"
+        useJUnit()
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+
+        systemProperty 'selenium.settings.path', "${cfg.settings}-settings.properties"
+
+        filter {
+            includeTestsMatching "com.nordstrom.automation.selenium.plugins.${cfg.test}"
+        }
+
+        doFirst {
+            jvmArgs "-javaagent:${classpath.find { it.name.contains('junit-foundation') }}"
+        }
+
+        reports.html.outputLocation.set(
+            layout.buildDirectory.dir("reports/test-${browser}")
+        )
+    }
+}

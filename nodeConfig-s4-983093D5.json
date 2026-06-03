@@ -1,0 +1,16 @@
+{
+  "node": {
+    "detect-drivers": false,
+    "hub": "http:\u002f\u002f10.0.0.31:4446\u002fgrid\u002fregister"
+  },
+  "relay": {
+    "configs": [
+      "1",
+      "{\n  \"appium:automationName\": \"UiAutomator2\",\n  \"platformName\": \"ANDROID\"\n}",
+      "1",
+      "{\n  \"appium:automationName\": \"UiAutomator2\",\n  \"browserName\": \"chrome\",\n  \"platformName\": \"ANDROID\"\n}"
+    ],
+    "port": 14238,
+    "host": "10.0.0.31"
+  }
+}

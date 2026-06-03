@@ -1,0 +1,385 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.sonatype.plexus:plexus-sec-dispatcher:1.4'
+        classpath 'org.codehaus.plexus:plexus-container-default:2.1.1'
+        classpath 'org.sonatype.plexus:plexus-cipher:1.7'
+    }
+}
+
+import org.gradle.internal.os.OperatingSystem
+import org.apache.tools.ant.filters.ReplaceTokens
+import groovy.xml.XmlParser
+import org.sonatype.plexus.components.sec.dispatcher.DefaultSecDispatcher
+import org.sonatype.plexus.components.cipher.DefaultPlexusCipher
+
+plugins {
+    id 'java-library'
+    id 'application'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'jacoco'
+    id 'signing'
+
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
+    id 'pl.allegro.tech.build.axion-release' version '1.21.1'
+}
+
+group = 'com.nordstrom.ui-tools'
+description = 'Selenium Grid Manager'
+
+ext.profile = project.findProperty('profile') ?: 'selenium4'
+assert ['selenium3', 'selenium4'].contains(profile)
+
+/* Repositories */
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+apply from: "${profile}Deps.gradle"
+
+/* Browser plugin class names */
+ext.pluginClasses = [
+    chrome      : 'com.nordstrom.automation.selenium.plugins.ChromePlugin',
+    edge        : 'com.nordstrom.automation.selenium.plugins.EdgePlugin',
+    espresso    : 'com.nordstrom.automation.selenium.plugins.EspressoPlugin',
+    firefox     : 'com.nordstrom.automation.selenium.plugins.FirefoxPlugin',
+    htmlunit    : 'com.nordstrom.automation.selenium.plugins.HtmlUnitPlugin',
+    mac2        : 'com.nordstrom.automation.selenium.plugins.Mac2Plugin',
+    safari      : 'com.nordstrom.automation.selenium.plugins.SafariPlugin',
+    uiautomator2: 'com.nordstrom.automation.selenium.plugins.UiAutomator2Plugin',
+    windows     : 'com.nordstrom.automation.selenium.plugins.WindowsPlugin',
+    xcuitest    : 'com.nordstrom.automation.selenium.plugins.XCUITestPlugin'
+]
+
+/* Browsers that require PM2 for Appium */
+ext.appiumBrowsers = ['espresso', 'mac2', 'uiautomator2', 'windows', 'xcuitest'] as Set
+
+/* Version logic - mirrors selenium-foundation approach */
+def verBits = scmVersion.version.split('-')
+def seleniumApi = "s${profile.charAt(8)}"
+
+def archiveVer = (verBits.length > 1 && verBits[1] == seleniumApi)
+    ? project.version
+    : verBits[0] + "-${seleniumApi}" + (verBits.length > 1 ? "-${verBits[1]}" : "")
+
+version = archiveVer
+def archiveBase = "${rootProject.name}-${archiveVer}"
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+/* Application entry point */
+application {
+    mainClass = 'com.nordstrom.utility.Main'
+}
+
+/* Clean */
+tasks.named('clean') {
+    delete 'logs', 'target', buildRoot
+}
+
+/* JaCoCo */
+jacoco {
+    toolVersion = '0.8.13'
+    reportsDirectory = layout.buildDirectory.dir("jacoco")
+}
+
+jacocoTestReport {
+    reports {
+        xml.required  = false
+        csv.required  = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+/* Shared libs dir */
+def libsDirProvider = layout.buildDirectory.dir("libs")
+
+/* Main JAR */
+tasks.named('jar', Jar) {
+    group = 'Build'
+    description = "Assembles a jar archive containing the '${profile}' classes."
+    archiveFileName.set("${archiveBase}.jar")
+    destinationDirectory.set(libsDirProvider)
+
+    // set Install as the executable main class
+    manifest {
+        attributes 'Main-Class': 'com.nordstrom.utility.Install'
+    }
+
+    // bundle Gradle build files for installer extraction
+    from('.') {
+        include 'build.gradle'
+        include 'settings.gradle'
+        include 'selenium4Deps.gradle'
+        include 'selenium3Deps.gradle'
+        include 'gradlew'
+        include 'gradlew.bat'
+        include 'gradle/wrapper/**'
+        into "META-INF/gradle/${project.group}/${rootProject.name}"
+    }
+}
+
+/* Sources JAR */
+tasks.named('sourcesJar', Jar) {
+    group = 'Build'
+    archiveClassifier.set('sources')
+    archiveFileName.set("${archiveBase}-sources.jar")
+    destinationDirectory.set(libsDirProvider)
+}
+
+/* Javadoc JAR */
+tasks.named('javadocJar', Jar) {
+    group = 'Build'
+    archiveClassifier.set('javadoc')
+    archiveFileName.set("${archiveBase}-javadoc.jar")
+    destinationDirectory.set(libsDirProvider)
+}
+
+/* Run Grid task - equivalent to Maven exec:java
+ *
+ * Usage:
+ *   ./gradlew runGrid -Pbrowsers=chrome,firefox
+ *   ./gradlew runGrid -Pexec.args="-shutdown"
+ *   ./gradlew runGrid -Pbrowsers=chrome -Pexec.args="-port 4444"
+ */
+tasks.register('runGrid', JavaExec) {
+    group = 'Application'
+    description = 'Launch a local Selenium Grid instance'
+
+    // parse selected browsers from -Pbrowsers=chrome,firefox
+    def selectedBrowsers = (project.findProperty('browsers') ?: '')
+        .split(',')
+        .collect { it.trim() }
+        .findAll { it && pluginClasses.containsKey(it) }
+
+    // if browsers selected, use their runtime configurations which already
+    // extend runtimeClasspath and include browser-specific dependencies.
+    // if no browsers selected, fall back to plain runtimeClasspath (hub only).
+    if (selectedBrowsers) {
+        classpath = files(
+            selectedBrowsers.collectMany { browser ->
+                configurations["${browser}Runtime"]
+                    .resolvedConfiguration
+                    .resolvedArtifacts
+                    *.file
+            }.unique()
+        )
+    } else {
+        classpath = configurations.runtimeClasspath
+    }
+
+    mainClass = 'com.nordstrom.utility.Main'
+
+    // build selenium.grid.plugins system property from selected browsers
+    def plugins = selectedBrowsers
+        .collect { pluginClasses[it] }
+        .join(File.pathSeparator)
+
+    if (plugins) {
+        systemProperty 'selenium.grid.plugins', plugins
+    }
+
+    // automatically enable PM2 if any Appium browser is selected
+    systemProperty 'appium.with.pm2',
+        selectedBrowsers.any { appiumBrowsers.contains(it) }
+
+    // pass through exec args: ./gradlew runGrid -Pexec.args="-shutdown"
+    if (project.hasProperty('exec.args')) {
+        args project.getProperty('exec.args').split(' ')
+    }
+
+    // pass through selenium/appium settings from command line
+    System.properties.findAll { k, _ ->
+        ['selenium.', 'appium.', 'node.', 'npm.', 'pm2.']
+            .any { k.startsWith(it) }
+    }.each { k, v ->
+        systemProperty k, v
+    }
+}
+
+/* Test system property propagation */
+tasks.withType(Test).configureEach {
+    systemProperties.putAll(
+        System.properties.findAll { k, _ ->
+            k.endsWith('.binary.path') ||
+            ['selenium.', 'appium.', 'junit.']
+                .any { k.startsWith(it) }
+        }.collectEntries { k, v ->
+            if (OperatingSystem.current().isWindows() && k.endsWith('selenium.browser.caps')) {
+                [(k): v.replace('"', '\\\"')]
+            } else {
+                [(k): v]
+            }
+        }
+    )
+
+    reports.html.outputLocation.set(
+        layout.buildDirectory.dir("reports/${name}")
+    )
+}
+
+/* JUnit */
+tasks.named('test', Test) {
+    testLogging.showStandardStreams = true
+
+    if (project.findProperty('debugJUnit') == 'true') {
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006'
+        maxParallelForks = 1
+        forkEvery = 0
+    }
+
+    doFirst {
+        jvmArgs "-javaagent:${classpath.find { it.name.contains('junit-foundation') }}"
+    }
+}
+
+def getMavenServer(String serverId) {
+    def settingsFile = new File(System.getProperty("user.home"), ".m2/settings.xml")
+    if (!settingsFile.exists()) return null
+
+    def settings = new XmlParser().parse(settingsFile)
+    def server = settings.servers.server.find { it.id.text() == serverId }
+
+    if (server) {
+        def dispatcher = new DefaultSecDispatcher()
+        dispatcher._cipher = new DefaultPlexusCipher()
+
+        def securityFile = new File(System.getProperty("user.home"), ".m2/settings-security.xml")
+        System.setProperty("settings.security", securityFile.absolutePath)
+
+        def decrypt = { String val ->
+            if (val == null) return null
+            return dispatcher._cipher.isEncryptedString(val) ? dispatcher.decrypt(val) : val
+        }
+
+        return [
+            username  : server.username?.text(),
+            password  : decrypt(server.password?.text()),
+            passphrase: decrypt(server.passphrase?.text())
+        ]
+    }
+
+    return null
+}
+
+scmVersion {
+    repository {
+        def githubNode = getMavenServer('github')
+        if (githubNode) {
+            customUsername.set(githubNode.username)
+            customPassword.set(githubNode.password)
+        }
+    }
+    hooks {
+        pre 'fileUpdate', [
+            file       : 'README.md',
+            pattern    : { v, p -> /\d+\.\d+\.\d+-s3/ },
+            replacement: { v, p -> "${v}-s3" }
+        ]
+        pre 'fileUpdate', [
+            file       : 'README.md',
+            pattern    : { v, p -> /\d+\.\d+\.\d+-s4/ },
+            replacement: { v, p -> "${v}-s4" }
+        ]
+        pre 'commit'
+        post 'push'
+    }
+}
+
+/* Publishing */
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = 'Selenium Grid Manager'
+                groupId = project.group
+                artifactId = rootProject.name
+                version = archiveVer
+                packaging = 'jar'
+                description = 'Selenium Grid Manager provides local Selenium Grid instance management, ' +
+                    'including launch, augmentation, and shutdown of hub and node servers.'
+                url = 'https://github.com/sbabcoc/selenium-grid-manager'
+
+                scm {
+                    connection = 'scm:git:https://github.com/sbabcoc/selenium-grid-manager.git'
+                    developerConnection = 'scm:git:https://github.com/sbabcoc/selenium-grid-manager.git'
+                    url = 'https://github.com/sbabcoc/selenium-grid-manager/tree/master'
+                    tag = 'HEAD'
+                }
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'scoba'
+                        name = 'Scott Babcock'
+                        email = 'scoba@hotmail.com'
+                        organization = 'Nordstrom'
+                        organizationUrl = 'https://shop.nordstrom.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* Signing */
+signing {
+    if (project.hasProperty('signing.keyId')) {
+        def keyId = project.getProperty('signing.keyId')
+        def gpgNode = getMavenServer(keyId)
+        def secret = gpgNode?.passphrase
+
+        if (secret) {
+            useGpgCmd()
+            project.ext.set("signing.gnupg.passphrase", secret)
+            project.ext.set("signing.gnupg.arguments", "--batch,--pinentry-mode,loopback")
+        }
+    }
+    sign publishing.publications.mavenJava
+}
+
+/* Install alias */
+tasks.register('install') {
+    dependsOn tasks.named('publishToMavenLocal')
+    group = tasks.named('publishToMavenLocal').get().group
+    description = "[alias] publish to Maven Local"
+}
+
+/* Nexus publishing */
+nexusPublishing {
+    packageGroup = 'com.nordstrom'
+    repositories {
+        ossrh {
+            def ossrhNode = getMavenServer('ossrh')
+            username = ossrhNode?.username
+            password = ossrhNode?.password
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
+            if (project.hasProperty('ossrhStagingProfileId')) {
+                stagingProfileId = ossrhStagingProfileId
+            }
+        }
+    }
+}
+
+/* Shared dependencies */
+dependencies {
+    api platform("com.nordstrom.ui-tools:selenium-bom-${seleniumApi}:${archiveVer.split('-')[0]}")
+
+    api 'com.nordstrom.tools:java-utils'
+    api 'com.nordstrom.tools:settings'
+}

@@ -1,0 +1,6 @@
+{
+  "distributor": {
+    "slot-matcher": "com.nordstrom.automation.selenium.core.FoundationSlotMatcher",
+    "reject-unsupported-caps": true
+  }
+}
