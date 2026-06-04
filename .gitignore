@@ -4,6 +4,8 @@
 
 .gradle/
 build/
+build-s3/
+build-s4/
 
 # Gradle wrapper (keep these tracked)
 # !gradlew
