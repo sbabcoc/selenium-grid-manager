@@ -170,7 +170,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // - otherwise, use specified hub port, defaulting to -1
             Integer hubPort = (hubUrl != null) ?
                     hubUrl.getPort() : config.getInteger(SeleniumSettings.HUB_PORT.key(), -1);
-            Path outputPath = GridUtility.getOutputPath(config, true);
+            Path outputPath = LocalGridUtility.getOutputPath(config, true);
             hubServer = create(config, launcherClassName, dependencyContexts, 
                     true, hubPort, hubConfigPath, workingPath, outputPath);
         }
