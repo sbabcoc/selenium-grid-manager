@@ -271,7 +271,6 @@ scmVersion {
     branchVersionCreator.putAll([
         '.*': { v, p -> v }
     ])
-    versionIncrementer('noVersionIncrementer')
     repository {
         def githubNode = getMavenServer('github')
         if (githubNode) {
