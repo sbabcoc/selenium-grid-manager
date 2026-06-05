@@ -58,16 +58,14 @@ ext.pluginClasses = [
 /* Browsers that require PM2 for Appium */
 ext.appiumBrowsers = ['espresso', 'mac2', 'uiautomator2', 'windows', 'xcuitest'] as Set
 
-/* Version logic - mirrors selenium-foundation approach */
+/* Version logic */
 def verBits = scmVersion.version.split('-')
 def seleniumApi = "s${profile.charAt(8)}"
-
-def archiveVer = (verBits.length > 1 && verBits[1] == seleniumApi)
-    ? project.version
-    : verBits[0] + "-${seleniumApi}" + (verBits.length > 1 ? "-${verBits[1]}" : "")
-
+ext.baseVersion = verBits[0]
+ext.isSnapshot = !scmVersion.version.matches('\\d+\\.\\d+\\.\\d+')
+ext.archiveVer = "${baseVersion}-${seleniumApi}" + (isSnapshot ? '-SNAPSHOT' : '')
+ext.archiveBase = "${rootProject.name}-${archiveVer}"
 version = archiveVer
-def archiveBase = "${rootProject.name}-${archiveVer}"
 
 java {
     withJavadocJar()
@@ -270,6 +268,9 @@ def getMavenServer(String serverId) {
 }
 
 scmVersion {
+    branchVersionCreator.putAll([
+        '.*': { v, p -> v }
+    ])
     repository {
         def githubNode = getMavenServer('github')
         if (githubNode) {
