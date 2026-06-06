@@ -12,20 +12,19 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openqa.selenium.json.Json;
+
+import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.GridUtility;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
 
 public class GridHubTest {
 
-    private static SeleniumGrid seleniumGrid = null;
-    private static final String HUB_QUERY = "/grid/api/hub";
     private static final String HUB_STATUS = "/status";
     
     @BeforeClass
     public static void beforeClass() {
-        seleniumGrid = GridLauncher.create();
         try {
-        	seleniumGrid.activate();
+        	getSeleniumGrid().activate();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted activating local grid instance", e);
@@ -37,7 +36,7 @@ public class GridHubTest {
 	@Test
     @SuppressWarnings("unchecked")
     public void testBasicPage() throws IOException {
-        URL hubUrl = seleniumGrid.getHubServer().getUrl();
+        URL hubUrl = getSeleniumGrid().getHubServer().getUrl();
         String json = queryHub(hubUrl);
         Map<String, Object> response = new Json().toType(json, Map.class);
         assertTrue(response.containsKey("value"));
@@ -45,6 +44,10 @@ public class GridHubTest {
         assertTrue(value.containsKey("ready"));
         assertTrue((boolean) value.get("ready"));
     }
+	
+	private static SeleniumGrid getSeleniumGrid() {
+		return SeleniumConfig.getConfig().getSeleniumGrid();
+	}
     
     private static String queryHub(URL hubUrl) throws IOException {
         String json;
@@ -57,7 +60,7 @@ public class GridHubTest {
     
     @AfterClass
     public static void afterClass() throws InterruptedException {
-        seleniumGrid.shutdown();
+        getSeleniumGrid().shutdown();
     }
     
 }
