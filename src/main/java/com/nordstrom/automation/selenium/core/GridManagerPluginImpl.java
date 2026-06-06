@@ -1,9 +1,8 @@
 package com.nordstrom.automation.selenium.core;
 
 import java.io.IOException;
-import com.nordstrom.automation.selenium.core.GridManagerPlugin;
-import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
-import com.nordstrom.automation.selenium.core.SeleniumGrid;
+import java.util.concurrent.TimeoutException;
+
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
@@ -11,13 +10,18 @@ import com.nordstrom.common.base.UncheckedThrow;
  * {@code selenium-grid-manager} is on the classpath.
  */
 public class GridManagerPluginImpl implements GridManagerPlugin {
-    static {
-        SeleniumGrid.registerLocalGridFactory((config, hubUrl) -> {
-            try {
-                return LocalSeleniumGrid.create(config, hubUrl);
-            } catch (IOException e) {
-                throw UncheckedThrow.throwUnchecked(e);
-            }
-        });
-    }
+	static {
+		SeleniumGrid.registerGridServerFactory(
+				(url, isHub) -> new LocalSeleniumGrid.LocalGridServer(url, isHub));
+	    
+	    SeleniumGrid.registerLocalGridFactory((config, hubUrl) -> {
+	        try {
+	            SeleniumGrid grid = LocalSeleniumGrid.create(config, hubUrl);
+	            grid.activate();
+	            return grid;
+	        } catch (IOException | InterruptedException | TimeoutException e) {
+	            throw UncheckedThrow.throwUnchecked(e);
+	        }
+	    });
+	}
 }

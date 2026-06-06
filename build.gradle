@@ -217,7 +217,7 @@ tasks.register('runGrid', JavaExec) {
     // extend runtimeClasspath and include browser-specific dependencies.
     // if no browsers selected, fall back to plain runtimeClasspath (hub only).
     if (selectedBrowsers) {
-        classpath = files(
+        classpath = sourceSets.main.output + configurations.runtimeClasspath + files(
             selectedBrowsers.collectMany { browser ->
                 configurations["${browser}Runtime"]
                     .resolvedConfiguration
@@ -226,7 +226,7 @@ tasks.register('runGrid', JavaExec) {
             }.unique()
         )
     } else {
-        classpath = configurations.runtimeClasspath
+        classpath = sourceSets.main.output + configurations.runtimeClasspath
     }
 
     mainClass = 'com.nordstrom.utility.Main'
