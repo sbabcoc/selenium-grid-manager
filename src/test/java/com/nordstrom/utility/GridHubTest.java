@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -18,23 +19,36 @@ public class GridHubTest {
 
     private static SeleniumGrid seleniumGrid = null;
     private static final String HUB_QUERY = "/grid/api/hub";
+    private static final String HUB_STATUS = "/status";
     
     @BeforeClass
     public static void beforeClass() {
-        seleniumGrid = GridLauncher.launch();
+        seleniumGrid = GridLauncher.create();
+        try {
+        	seleniumGrid.activate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted activating local grid instance", e);
+        } catch (IOException | TimeoutException e) {
+            throw new IllegalStateException("Failed activating local grid instance", e);
+		}
     }
 
-    @Test
+	@Test
+    @SuppressWarnings("unchecked")
     public void testBasicPage() throws IOException {
         URL hubUrl = seleniumGrid.getHubServer().getUrl();
         String json = queryHub(hubUrl);
         Map<String, Object> response = new Json().toType(json, Map.class);
-        assertTrue((boolean) response.get("success"));
+        assertTrue(response.containsKey("value"));
+        Map<String, Object> value = (Map<String, Object>) response.get("value");
+        assertTrue(value.containsKey("ready"));
+        assertTrue((boolean) value.get("ready"));
     }
     
     private static String queryHub(URL hubUrl) throws IOException {
         String json;
-        String url = hubUrl.getProtocol() + "://" + hubUrl.getAuthority() + HUB_QUERY;
+        String url = hubUrl.getProtocol() + "://" + hubUrl.getAuthority() + HUB_STATUS;
         try (InputStream is = new URL(url).openStream()) {
             json = GridUtility.readAvailable(is);
         }

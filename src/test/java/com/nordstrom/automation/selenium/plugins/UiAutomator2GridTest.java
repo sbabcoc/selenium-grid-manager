@@ -10,7 +10,6 @@ import com.nordstrom.automation.selenium.core.SeleniumGrid;
 import com.nordstrom.automation.selenium.examples.AndroidPage;
 import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
-import com.nordstrom.automation.selenium.plugins.UiAutomator2Plugin;
 import com.nordstrom.utility.GridLauncher;
 
 @InitialPage(AndroidPage.class)
@@ -21,7 +20,7 @@ public class UiAutomator2GridTest extends JUnitBase {
 
     @Before
     public void beforeTest() {
-        launchSeleniumGrid();
+        createSeleniumGrid();
         ExamplePage.setHubAsTarget();
     }
 
@@ -32,14 +31,14 @@ public class UiAutomator2GridTest extends JUnitBase {
         assertEquals("Hello world!", page.getSearchResult());
     }
 
-    private void launchSeleniumGrid() {
+    private void createSeleniumGrid() {
         if (seleniumGrid == null) {
-            seleniumGrid = launchGrid();
+            seleniumGrid = createGrid();
         }
     }
     
-    private SeleniumGrid launchGrid() {
-        return GridLauncher.launch(getPlugin());
+    private SeleniumGrid createGrid() {
+        return GridLauncher.create(getPlugin());
     }
     
     private ManagedDriverPlugin getPlugin() {

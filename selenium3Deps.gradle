@@ -47,7 +47,7 @@ afterEvaluate {
 }
 
 dependencies {
-    api platform("com.nordstrom.ui-tools:selenium-bom-s3:${archiveVer.split('-')[0]}")
+    api platform("com.nordstrom.ui-tools:selenium-bom-s3:${baseVersion}${isSnapshot ? '-SNAPSHOT' : ''}")
 
     // core runtime dependencies
     api 'com.nordstrom.ui-tools:selenium-foundation'

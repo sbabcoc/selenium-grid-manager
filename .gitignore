@@ -85,6 +85,7 @@ bin/
 test-output/
 surefire-reports/
 failsafe-reports/
+*.json
 
 # ------------------------------------------------------------------------------
 # IntelliJ (in case contributors use it)

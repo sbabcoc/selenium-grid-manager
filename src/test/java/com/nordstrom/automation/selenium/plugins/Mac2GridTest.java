@@ -15,7 +15,6 @@ import com.nordstrom.automation.selenium.examples.TextEditApplication;
 import com.nordstrom.automation.selenium.examples.TextEditDocumentWindow;
 import com.nordstrom.automation.selenium.examples.TextEditManagementPanel;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
-import com.nordstrom.automation.selenium.plugins.Mac2Plugin;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
 import com.nordstrom.utility.GridLauncher;
@@ -33,7 +32,7 @@ public class Mac2GridTest extends JUnitBase {
     
     @Before
     public void beforeTest() {
-        launchSeleniumGrid();
+        createSeleniumGrid();
         ExamplePage.setHubAsTarget();
     }
 
@@ -47,14 +46,14 @@ public class Mac2GridTest extends JUnitBase {
         documentWindow.closeDocumentWithoutSaving();
     }
 
-    private void launchSeleniumGrid() {
+    private void createSeleniumGrid() {
         if (seleniumGrid == null) {
-            seleniumGrid = launchGrid();
+            seleniumGrid = createGrid();
         }
     }
 
-    private SeleniumGrid launchGrid() {
-        return GridLauncher.launch(getPlugin());
+    private SeleniumGrid createGrid() {
+        return GridLauncher.create(getPlugin());
     }
 
     private ManagedDriverPlugin getPlugin() {

@@ -34,7 +34,7 @@ public abstract class AbstractGridTest extends JUnitBase implements DriverProvid
 
     @Before
     public void beforeTest() {
-        launchSeleniumGrid();
+        createSeleniumGrid();
         ExamplePage.setHubAsTarget();
     }
 
@@ -234,14 +234,14 @@ public abstract class AbstractGridTest extends JUnitBase implements DriverProvid
         return GridUtility.getDriver(config.getHubUrl(), config.getCurrentCapabilities());
     }
 
-    private void launchSeleniumGrid() {
+    private void createSeleniumGrid() {
         if (seleniumGrid == null) {
-            seleniumGrid = launchGrid();
+            seleniumGrid = createGrid();
         }
     }
 
-    protected SeleniumGrid launchGrid() {
-        return GridLauncher.launch(getPlugin());
+    protected SeleniumGrid createGrid() {
+        return GridLauncher.create(getPlugin());
     }
 
     /**

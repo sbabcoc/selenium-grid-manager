@@ -281,6 +281,7 @@ tasks.withType(Test).configureEach {
 
 /* JUnit */
 tasks.named('test', Test) {
+    exclude 'com/nordstrom/automation/selenium/plugins/**'
     testLogging.showStandardStreams = true
 
     if (project.findProperty('debugJUnit') == 'true') {

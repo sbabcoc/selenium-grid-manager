@@ -19,7 +19,7 @@ public class GridLauncher {
     }
 
     /**
-     * Launch a local <b>Selenium Grid</b> instance that provides sessions for the indicated browser(s).
+     * Create an object that repreents a local <b>Selenium Grid</b>, providing sessions for the indicated browser(s).
      * <p>
      * <b>NOTE</b>: The new grid instance is injected into the current <b>Selenium Foundation</b> configuration. <br>
      * The following {@link SeleniumSettings properties} are directly updated by this method:
@@ -31,7 +31,7 @@ public class GridLauncher {
      * @param driverPlugins one or more {@link DriverPlugin} objects that provide grid node configuration
      * @return {@link SeleniumGrid} object that represents the new grid instance
      */
-    public static SeleniumGrid launch(DriverPlugin... driverPlugins) {
+    public static SeleniumGrid create(DriverPlugin... driverPlugins) {
         SeleniumConfig config = SeleniumConfig.getConfig();
         String plugins = Arrays.stream(driverPlugins)
                 .map(p -> p.getClass().getName())

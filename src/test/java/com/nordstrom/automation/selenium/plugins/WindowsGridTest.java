@@ -14,7 +14,6 @@ import com.nordstrom.automation.selenium.core.SeleniumGrid;
 import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.examples.NotepadApplication;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
-import com.nordstrom.automation.selenium.plugins.WindowsPlugin;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
 import com.nordstrom.utility.GridLauncher;
@@ -32,7 +31,7 @@ public class WindowsGridTest extends JUnitBase {
 
     @Before
     public void beforeTest() {
-        launchSeleniumGrid();
+        createSeleniumGrid();
         ExamplePage.setHubAsTarget();
     }
 
@@ -44,14 +43,14 @@ public class WindowsGridTest extends JUnitBase {
         page.modifyDocument(Keys.CONTROL + "z");
     }
 
-    private void launchSeleniumGrid() {
+    private void createSeleniumGrid() {
         if (seleniumGrid == null) {
-            seleniumGrid = launchGrid();
+            seleniumGrid = createGrid();
         }
     }
     
-    private SeleniumGrid launchGrid() {
-        return GridLauncher.launch(getPlugin());
+    private SeleniumGrid createGrid() {
+        return GridLauncher.create(getPlugin());
     }
     
     private ManagedDriverPlugin getPlugin() {

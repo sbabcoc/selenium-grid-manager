@@ -16,7 +16,6 @@ import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.examples.IOSApplicationEchoScreenView;
 import com.nordstrom.automation.selenium.examples.IOSApplicationMainView;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
-import com.nordstrom.automation.selenium.plugins.XCUITestPlugin;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
 import com.nordstrom.utility.GridLauncher;
@@ -34,7 +33,7 @@ public class XCUITestGridTest extends JUnitBase {
 
     @Before
     public void beforeTest() {
-        launchSeleniumGrid();
+        createSeleniumGrid();
         ExamplePage.setHubAsTarget();
     }
 
@@ -47,14 +46,14 @@ public class XCUITestGridTest extends JUnitBase {
         assertEquals(echoScreen.getSavedMessage(), uuid.toString());
     }
 
-    private void launchSeleniumGrid() {
+    private void createSeleniumGrid() {
         if (seleniumGrid == null) {
-            seleniumGrid = launchGrid();
+            seleniumGrid = createGrid();
         }
     }
 
-    private SeleniumGrid launchGrid() {
-        return GridLauncher.launch(getPlugin());
+    private SeleniumGrid createGrid() {
+        return GridLauncher.create(getPlugin());
     }
 
     private ManagedDriverPlugin getPlugin() {
