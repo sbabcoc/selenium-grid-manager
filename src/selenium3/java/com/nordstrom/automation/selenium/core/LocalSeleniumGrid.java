@@ -351,6 +351,18 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         }
         
         /**
+         * Constructor for local Grid server object used for shutdown only.
+         * No process management is available — shutdown uses port-based process discovery.
+         *
+         * @param url {@link URL} of local Grid server
+         * @param isHub role of Grid server ({@code true} = hub; {@code false} = node)
+         */
+        public LocalGridServer(URL url, boolean isHub) {
+            super(url, isHub);
+            this.cmdLine = null;
+        }
+        
+        /**
          * Get process for this local Grid server.
          * 
          * @return {@link Process} object
@@ -373,7 +385,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
          */
         @Override
         public void start() throws IOException, InterruptedException, TimeoutException {
-            if (!hasStarted) {
+            if (!hasStarted && cmdLine != null) {
                 cmdLine.executeAsync();
                 hasStarted = true;
             }
