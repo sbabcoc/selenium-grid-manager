@@ -79,20 +79,6 @@ scmVersion {
             customPassword.set(githubNode.password)
         }
     }
-    hooks {
-        pre 'fileUpdate', [
-            file       : 'README.md',
-            pattern    : { v, p -> /\d+\.\d+\.\d+-s3/ },
-            replacement: { v, p -> "${v}-s3" }
-        ]
-        pre 'fileUpdate', [
-            file       : 'README.md',
-            pattern    : { v, p -> /\d+\.\d+\.\d+-s4/ },
-            replacement: { v, p -> "${v}-s4" }
-        ]
-        pre 'commit'
-        post 'push'
-    }
 }
 
 /* Version logic */
@@ -103,6 +89,20 @@ ext.isSnapshot = !scmVersion.version.matches('\\d+\\.\\d+\\.\\d+')
 ext.archiveVer = "${baseVersion}-${seleniumApi}" + (isSnapshot ? '-SNAPSHOT' : '')
 ext.archiveBase = "${rootProject.name}-${archiveVer}"
 version = archiveVer
+
+task updateReadme {
+    doLast {
+        def version = scmVersion.version
+        ant.replaceregexp(file: 'README.md',
+            match: /\d+\.\d+\.\d+-s3/,
+            replace: "${version}-s3",
+            flags: 'g')
+        ant.replaceregexp(file: 'README.md',
+            match: /\d+\.\d+\.\d+-s4/,
+            replace: "${version}-s4",
+            flags: 'g')
+    }
+}
 
 apply from: "${profile}Deps.gradle"
 
