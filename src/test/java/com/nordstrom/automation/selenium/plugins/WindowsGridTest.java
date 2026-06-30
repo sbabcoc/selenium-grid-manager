@@ -14,9 +14,9 @@ import com.nordstrom.automation.selenium.core.SeleniumGrid;
 import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.examples.NotepadApplication;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
+import com.nordstrom.automation.selenium.utility.GridLauncher;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
-import com.nordstrom.utility.GridLauncher;
 
 @InitialPage(NotepadApplication.class)
 public class WindowsGridTest extends JUnitBase {

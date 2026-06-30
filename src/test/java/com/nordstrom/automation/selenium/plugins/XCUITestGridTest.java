@@ -16,9 +16,9 @@ import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.examples.IOSApplicationEchoScreenView;
 import com.nordstrom.automation.selenium.examples.IOSApplicationMainView;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
+import com.nordstrom.automation.selenium.utility.GridLauncher;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
-import com.nordstrom.utility.GridLauncher;
 
 @InitialPage(IOSApplicationMainView.class)
 public class XCUITestGridTest extends JUnitBase {

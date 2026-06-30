@@ -10,7 +10,7 @@ import com.nordstrom.automation.selenium.core.SeleniumGrid;
 import com.nordstrom.automation.selenium.examples.AndroidPage;
 import com.nordstrom.automation.selenium.examples.ExamplePage;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
-import com.nordstrom.utility.GridLauncher;
+import com.nordstrom.automation.selenium.utility.GridLauncher;
 
 @InitialPage(AndroidPage.class)
 public class EspressoGridTest extends JUnitBase {

@@ -1,4 +1,4 @@
-package com.nordstrom.utility;
+package com.nordstrom.automation.selenium.utility;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -18,7 +18,6 @@ import com.nordstrom.automation.selenium.core.IGridServer;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
-import com.nordstrom.automation.selenium.utility.HostUtils;
 
 /**
  * This class implements the command line interface for {@code selenium-grid-manager}.

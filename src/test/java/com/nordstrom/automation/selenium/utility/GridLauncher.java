@@ -1,4 +1,4 @@
-package com.nordstrom.utility;
+package com.nordstrom.automation.selenium.utility;
 
 import java.io.File;
 import java.util.Arrays;

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.nordstrom.automation.selenium.exceptions.DriverExecutableNotFoundException;
-import com.nordstrom.automation.selenium.utility.BinaryFinder;
+import com.nordstrom.automation.selenium.utility.DriverBinaryFinder;
 
 /**
  * This class defines properties and methods used by plug-ins that support the Microsoft Edge browser.
@@ -97,7 +97,7 @@ public class EdgeCaps {
      */
     public static String[] getPropertyNames(String capabilities) {
         try {
-            File driverPath = BinaryFinder.findDriver(capabilities);
+            File driverPath = DriverBinaryFinder.findDriver(capabilities);
             System.setProperty(DRIVER_PATH, driverPath.getAbsolutePath());
         } catch (IllegalStateException e) {
             throw new DriverExecutableNotFoundException(DRIVER_PATH);
