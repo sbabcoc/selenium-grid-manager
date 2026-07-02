@@ -3,9 +3,9 @@ package com.nordstrom.automation.selenium.plugins;
 import org.junit.Assume;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.plugins.SafariPlugin;
+import com.nordstrom.automation.selenium.utility.AbstractGridTest;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
-import com.nordstrom.utility.AbstractGridTest;
 
 public class SafariGridTest extends AbstractGridTest {
 

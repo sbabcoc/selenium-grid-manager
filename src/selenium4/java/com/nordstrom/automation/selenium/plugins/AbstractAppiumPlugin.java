@@ -4,7 +4,6 @@ import static org.openqa.selenium.json.Json.MAP_TYPE;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -39,7 +38,7 @@ import com.nordstrom.automation.selenium.core.GridUtility;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
-import com.nordstrom.automation.selenium.utility.BinaryFinder;
+import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.common.file.PathUtils;
 
 import net.bytebuddy.implementation.Implementation;
@@ -349,7 +348,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
      * @throws GridServerLaunchFailedException if 'npm' isn't found
      */
     private static File findNPMBinary() throws GridServerLaunchFailedException {
-        return findBinary("npm", SeleniumSettings.NPM_BINARY_PATH, "'npm' package manager");
+        return NodeBinaryFinder.findBinary("npm", SeleniumSettings.NPM_BINARY_PATH, "'npm' package manager");
     }
     
     /**
@@ -359,7 +358,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
      * @throws GridServerLaunchFailedException if 'node' isn't found
      */
     private static File findNodeBinary() throws GridServerLaunchFailedException {
-        return findBinary("node", SeleniumSettings.NODE_BINARY_PATH, "'node' JavaScript runtime");
+        return NodeBinaryFinder.findBinary("node", SeleniumSettings.NODE_BINARY_PATH, "'node' JavaScript runtime");
     }
     
     /**
@@ -369,7 +368,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
      * @throws GridServerLaunchFailedException if 'node' isn't found
      */
     private static File findPM2Binary() throws GridServerLaunchFailedException {
-        return findBinary("pm2", SeleniumSettings.PM2_BINARY_PATH, "'pm2' process manager");
+        return NodeBinaryFinder.findBinary("pm2", SeleniumSettings.PM2_BINARY_PATH, "'pm2' process manager");
     }
     
     /**
@@ -381,7 +380,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     private static File findMainScript() throws GridServerLaunchFailedException {
         // check configuration for path to 'appium' main script
         try {
-            return findBinary("main.js", SeleniumSettings.APPIUM_BINARY_PATH, "'appium' main script");
+            return NodeBinaryFinder.findBinary("main.js", SeleniumSettings.APPIUM_BINARY_PATH, "'appium' main script");
         } catch (GridServerLaunchFailedException eaten) {
             // path not specified - check modules repository below
         }
@@ -421,7 +420,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
             if (index > 0) nodeModulesRoot = nodeModulesRoot.substring(index).trim();
             File appiumMain = Paths.get(nodeModulesRoot, APPIUM_PATH_TAIL).toFile();
             if (appiumMain.exists()) return appiumMain;
-            throw fileNotFound("'appium' main script", SeleniumSettings.APPIUM_BINARY_PATH);
+            throw NodeBinaryFinder.fileNotFound("'appium' main script", SeleniumSettings.APPIUM_BINARY_PATH);
         } catch (IOException cause) {
             throw new GridServerLaunchFailedException("node", cause);
         } catch (InterruptedException cause) {
@@ -430,37 +429,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         }
     }
     
-    /**
-     * Find the specified binary.
-     * 
-     * @param exeName file name of binary to find
-     * @param setting associated configuration setting
-     * @param what human-readable description of binary
-     * @return path to specified binary as a {@link File} object
-     * @throws GridServerLaunchFailedException if specified binary isn't found
-     */
-    private static File findBinary(String exeName, SeleniumSettings setting, String what)
-            throws GridServerLaunchFailedException {
-        try {
-            return BinaryFinder.findBinary(exeName, setting.key());
-        } catch (IllegalStateException eaten) {
-            IOException cause = fileNotFound(what, setting);
-            throw new GridServerLaunchFailedException("node", cause);
-        }
-    }
-    
-    /**
-     * Assemble a 'file not found' exception for the indicated binary.
-     * 
-     * @param what human-readable description of binary
-     * @param setting associated configuration setting
-     * @return {@link FileNotFoundException} object
-     */
-    private static IOException fileNotFound(String what, SeleniumSettings setting) {
-        String template = "%s not found; configure the %s setting (key: %s)";
-        return new FileNotFoundException(String.format(template, what, setting.name(), setting.key()));
-    }
-
     /**
      * This class represents a single Appium node server belonging to a local Grid collection.
      */

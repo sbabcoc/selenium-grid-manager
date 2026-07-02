@@ -22,7 +22,15 @@ The task of launching the grid servers is performed by the **Gradle** `runGrid` 
 * As indicated above, `selenium-grid-manager` relies on **Gradle** to manage dependencies and execute the Java command line application that launches the specified grid collection. The Gradle wrapper is included in the installation and no separate Gradle installation is required.
 * To run pre-built `selenium-grid-manager` modules, you'll need a Java 17+ runtime environment.
 * If you want to explore the code and build it locally, you'll need a `git` client to clone the repository and a Java 17+ development kit to build the project.
-* **Selenium Manager** is used to acquire compatible drivers for the browsers supported by your grid configuration. If the manager is unable to locate or download a required driver, **DriverExecutableNotFoundException** is thrown.<br><br>This feature does not include management of Appium [automation engines](https://github.com/sbabcoc/Selenium-Foundation/blob/master/docs/ConfiguringProjectSettings.md#appium-automation-engine-support), which must be installed separately.
+
+
+## Automatic Installation of Drivers 
+
+Since the release of **Selenium Foundation** [28.0.0](https://github.com/sbabcoc/Selenium-Foundation/releases/tag/v28.0.0), we now use **Selenium Manager** (Selenium 4) and **Web Driver Manager** (Selenium 3) to acquire compatible drivers for the browsers targeted by your tests. If the manager is unable to locate or download a required driver, **DriverExecutableNotFoundException** is thrown.
+
+This feature does not include management of Appium [automation engines](docs/ConfiguringProjectSettings.md#appium-automation-engine-support), which must be installed separately.
+
+**NOTE**: This driver acquisition process is bypassed for test classes that implement the [DriverProvider](docs/ConfiguringProjectSettings.md#testing-with-non-default-browser-sessions) interface.
 
 ## Requirements for Appium
 

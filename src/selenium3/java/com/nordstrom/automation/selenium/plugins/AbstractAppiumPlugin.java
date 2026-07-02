@@ -33,7 +33,7 @@ import com.nordstrom.automation.selenium.core.GridUtility;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
-import com.nordstrom.automation.selenium.utility.BinaryFinder;
+import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
 
@@ -403,7 +403,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     private static File findBinary(String exeName, SeleniumSettings setting, String what)
             throws GridServerLaunchFailedException {
         try {
-            return BinaryFinder.findBinary(exeName, setting.key());
+            return NodeBinaryFinder.findBinary(exeName, setting.key());
         } catch (IllegalStateException eaten) {
             IOException cause = fileNotFound(what, setting);
             throw new GridServerLaunchFailedException("node", cause);

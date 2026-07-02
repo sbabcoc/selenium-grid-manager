@@ -15,9 +15,9 @@ import com.nordstrom.automation.selenium.examples.TextEditApplication;
 import com.nordstrom.automation.selenium.examples.TextEditDocumentWindow;
 import com.nordstrom.automation.selenium.examples.TextEditManagementPanel;
 import com.nordstrom.automation.selenium.junit.JUnitBase;
+import com.nordstrom.automation.selenium.utility.GridLauncher;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;
-import com.nordstrom.utility.GridLauncher;
 
 @InitialPage(TextEditApplication.class)
 public class Mac2GridTest extends JUnitBase {

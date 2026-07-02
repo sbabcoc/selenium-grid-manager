@@ -1,4 +1,4 @@
-package com.nordstrom.utility;
+package com.nordstrom.automation.selenium.utility;
 
 import static org.junit.Assert.assertTrue;
 

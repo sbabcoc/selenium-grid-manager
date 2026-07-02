@@ -130,7 +130,7 @@ java {
 
 /* Application entry point */
 application {
-    mainClass = 'com.nordstrom.utility.Main'
+    mainClass = 'com.nordstrom.automation.selenium.utility.Main'
 }
 
 /* Clean */
@@ -164,7 +164,7 @@ tasks.named('jar', Jar) {
 
     // set Install as the executable main class
     manifest {
-        attributes 'Main-Class': 'com.nordstrom.utility.Install'
+        attributes 'Main-Class': 'com.nordstrom.automation.selenium.utility.Install'
     }
 
     // bundle Gradle build files for installer extraction
@@ -229,7 +229,7 @@ tasks.register('runGrid', JavaExec) {
         classpath = sourceSets.main.output + configurations.runtimeClasspath
     }
 
-    mainClass = 'com.nordstrom.utility.Main'
+    mainClass = 'com.nordstrom.automation.selenium.utility.Main'
 
     // build selenium.grid.plugins system property from selected browsers
     def plugins = selectedBrowsers
