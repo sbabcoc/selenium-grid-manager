@@ -240,3 +240,28 @@ at the same base version. Check with:
 ```groovy
 def verBits = scmVersion.version.split('-')
 ```
+
+## @since Placeholder Replacement
+
+New classes and interfaces use `@since [next-major]` as a placeholder in source.
+This placeholder is replaced automatically during a release build — no manual
+intervention is needed.
+
+### How it works
+
+When `./gradlew publish` is run against a tagged commit, the following steps
+execute automatically before compilation:
+
+1. **`updateReadme`** — updates version references in `README.md`
+2. **`updateSinceAnnotations`** — replaces all `[next-major]` placeholders in
+   Java source files with the base release version (e.g. `35.0.6`)
+3. **`checkSincePlaceholders`** — fails the build if any `[next-major]`
+   placeholders remain unreplaced
+
+All three tasks are no-ops on SNAPSHOT builds, so feature and fix branch
+builds are unaffected.
+
+> ⚠️ **Do not run `updateSinceAnnotations` or `updateReadme` manually before
+> tagging.** These tasks must run against the clean release version resolved
+> after tagging. Running them before tagging will insert a SNAPSHOT version
+> string into the source files.
