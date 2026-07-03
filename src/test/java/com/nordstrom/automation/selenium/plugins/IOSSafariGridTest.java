@@ -10,7 +10,6 @@ import org.openqa.selenium.WebDriver;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.GridUtility;
-import com.nordstrom.automation.selenium.plugins.XCUITestPlugin;
 import com.nordstrom.automation.selenium.utility.AbstractGridTest;
 import com.nordstrom.common.file.OSInfo;
 import com.nordstrom.common.file.OSInfo.OSType;

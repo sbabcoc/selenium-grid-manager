@@ -8,7 +8,6 @@ import org.openqa.selenium.WebDriver;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.GridUtility;
-import com.nordstrom.automation.selenium.plugins.UiAutomator2Plugin;
 import com.nordstrom.automation.selenium.utility.AbstractGridTest;
 
 public class AndroidChromeGridTest extends AbstractGridTest {

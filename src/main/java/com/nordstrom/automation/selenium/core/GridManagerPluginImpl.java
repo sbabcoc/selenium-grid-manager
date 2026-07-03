@@ -10,18 +10,15 @@ import com.nordstrom.common.base.UncheckedThrow;
  * {@code selenium-grid-manager} is on the classpath.
  */
 public class GridManagerPluginImpl implements GridManagerPlugin {
-	static {
-		SeleniumGrid.registerGridServerFactory(
-				(url, isHub) -> new LocalSeleniumGrid.LocalGridServer(url, isHub));
-	    
-	    SeleniumGrid.registerLocalGridFactory((config, hubUrl) -> {
-	        try {
-	            SeleniumGrid grid = LocalSeleniumGrid.create(config, hubUrl);
-	            grid.activate();
-	            return grid;
-	        } catch (IOException | InterruptedException | TimeoutException e) {
-	            throw UncheckedThrow.throwUnchecked(e);
-	        }
-	    });
-	}
+    static {
+        SeleniumGrid.registerLocalGridFactory((config, hubUrl) -> {
+            try {
+                SeleniumGrid grid = LocalSeleniumGrid.create(config, hubUrl);
+                grid.activate();
+                return grid;
+            } catch (IOException | InterruptedException | TimeoutException e) {
+                throw UncheckedThrow.throwUnchecked(e);
+            }
+        });
+    }
 }

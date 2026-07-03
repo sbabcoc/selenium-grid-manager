@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,8 +34,9 @@ import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.GridUtility;
-import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
-import com.nordstrom.automation.selenium.core.GridServer;
+import com.nordstrom.automation.selenium.core.LocalGridServer;
+import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
+import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.common.file.PathUtils;
@@ -79,14 +79,13 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
 
     private static final String[] DEPENDENCY_CONTEXTS = {};
     private static final String[] APPIUM_PATH_TAIL = { "appium", "build", "lib", "main.js" };
-    private static final String[] PROPERTY_NAMES = 
-        { SeleniumSettings.APPIUM_WITH_PM2.key(), SeleniumSettings.APPIUM_CLI_ARGS.key(), SeleniumSettings.NPM_BINARY_PATH.key(),
-          SeleniumSettings.NODE_BINARY_PATH.key(), SeleniumSettings.PM2_BINARY_PATH.key(), SeleniumSettings.APPIUM_BINARY_PATH.key() };
+	private static final String[] PROPERTY_NAMES = { SeleniumSettings.APPIUM_CLI_ARGS.key(),
+			SeleniumSettings.NPM_BINARY_PATH.key(), SeleniumSettings.NODE_BINARY_PATH.key(),
+			SeleniumSettings.PM2_BINARY_PATH.key(), SeleniumSettings.APPIUM_BINARY_PATH.key() };
     
     private static final Class<?>[] ARG_TYPES = {URL.class, Capabilities.class};
     
     private static final Pattern OPTION_PATTERN = Pattern.compile("\\s*(-[a-zA-Z0-9]+|--[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)");
-    private static final String APPIUM_WITH_PM2 = "{\"nord:options\":{\"appiumWithPM2\":true}}";
     private static final String APPIUM_HOME = "APPIUM_HOME";
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAppiumPlugin.class);
@@ -131,8 +130,8 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public LocalGridServer create(SeleniumConfig config, String launcherClassName, String[] dependencyContexts,
-            URL hubUrl, Path workingPath, Path outputPath) throws IOException {
+    public LocalGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+            String[] dependencyContexts, URL hubUrl, Path workingPath, Path outputPath) throws IOException {
         
         String address;
         Integer portNum;
@@ -234,47 +233,40 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         ProcessBuilder builder;
         String appiumBinaryPath = findMainScript().getAbsolutePath();
         
-        // if running with 'pm2'
-        if (config.appiumWithPM2()) {
-            File pm2Binary = findPM2Binary().getAbsoluteFile();
-            String winQuote = (SystemUtils.IS_OS_WINDOWS) ? "\"" : "";
+        File pm2Binary = findPM2Binary().getAbsoluteFile();
+        String winQuote = (SystemUtils.IS_OS_WINDOWS) ? "\"" : "";
 
-            argsList.add(0, "--");
-            
-            // if capturing output
-            if (outputPath != null) {
-                // specify 'pm2' log output path
-                argsList.add(0, winQuote + outputPath.toString() + winQuote);
-                argsList.add(0, "--log");
-            }
-            
-            // specify 'pm2' process name
-            argsList.add(0, "appium-" + portNum);
-            argsList.add(0, "--name");
-            
-            // specify path to 'appium' main script 
-            argsList.add(0, winQuote + appiumBinaryPath + winQuote);
-            argsList.add(0, "start");
-            
-            String executable;
-            if (SystemUtils.IS_OS_WINDOWS) {
-                argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
-                String command = String.join(" ", argsList);
-                argsList.clear();
-                
-                executable = "cmd.exe";
-                argsList.add("/c");
-                argsList.add("\"" + command + "\"");
-            } else {
-                executable = pm2Binary.getAbsolutePath();
-            }
-
-            argsList.add(0, executable);
-        // otherwise (running with 'node')
-        } else {
-            argsList.add(0, appiumBinaryPath);
-            argsList.add(0, findNodeBinary().getAbsolutePath());
+        argsList.add(0, "--");
+        
+        // if capturing output
+        if (outputPath != null) {
+            // specify 'pm2' log output path
+            argsList.add(0, winQuote + outputPath.toString() + winQuote);
+            argsList.add(0, "--log");
         }
+        
+        // specify 'pm2' process name
+        argsList.add(0, "appium-" + portNum);
+        argsList.add(0, "--name");
+        
+        // specify path to 'appium' main script 
+        argsList.add(0, winQuote + appiumBinaryPath + winQuote);
+        argsList.add(0, "start");
+        
+        String executable;
+        if (SystemUtils.IS_OS_WINDOWS) {
+            argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
+            String command = String.join(" ", argsList);
+            argsList.clear();
+            
+            executable = "cmd.exe";
+            argsList.add("/c");
+            argsList.add("\"" + command + "\"");
+        } else {
+            executable = pm2Binary.getAbsolutePath();
+        }
+
+        argsList.add(0, executable);
         
         builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
@@ -284,7 +276,8 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         // set APPIUM_HOME to work around auto-detection issue
         builder.environment().put(APPIUM_HOME, Optional.ofNullable(System.getenv(APPIUM_HOME))
                 .orElse(System.getProperty("user.home") + File.separator + ".appium"));
-        return new AppiumGridServer(address, portNum, false, builder, workingPath, outputPath);
+        return new AppiumGridServer(address, portNum, false, hubPort, builder, workingPath, null,
+                new PM2RegistrationStrategy(4));
     }
 
     /**
@@ -323,25 +316,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     public abstract String getDriverClassName();
     
     /**
-     * Add the 'nord:options' object to the specified node capabilities string. <br>
-     * <b>NOTE</b>: The 'nord:options' object is only added if Appium is being managed by PM2.
-     * 
-     * @param config {@link SeleniumConfig} object
-     * @param nodeCapabilities node capabilities string
-     * @return node capabilities string 
-     */
-    String addNordOptions(SeleniumConfig config, String nodeCapabilities) {
-        // if not running with 'pm2', no options to add
-        if (!config.appiumWithPM2()) return nodeCapabilities;
-        
-        // add indication of standalone execution of 'appium' with 'pm2'
-        Capabilities nordOptions = config.getCapabilitiesForJson(APPIUM_WITH_PM2)[0];
-        return config.toJson(Arrays.stream(config.getCapabilitiesForJson(nodeCapabilities))
-            .map(capabilities -> config.mergeCapabilities(capabilities, nordOptions))
-            .collect(Collectors.toList()));
-    }
-    
-    /**
      * Find the 'npm' (Node Package Manager) binary.
      * 
      * @return path to the 'npm' binary as a {@link File} object
@@ -349,16 +323,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
      */
     private static File findNPMBinary() throws GridServerLaunchFailedException {
         return NodeBinaryFinder.findBinary("npm", SeleniumSettings.NPM_BINARY_PATH, "'npm' package manager");
-    }
-    
-    /**
-     * Find the 'node' binary.
-     * 
-     * @return path to the 'node' binary as a {@link File} object
-     * @throws GridServerLaunchFailedException if 'node' isn't found
-     */
-    private static File findNodeBinary() throws GridServerLaunchFailedException {
-        return NodeBinaryFinder.findBinary("node", SeleniumSettings.NODE_BINARY_PATH, "'node' JavaScript runtime");
     }
     
     /**
@@ -435,17 +399,20 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     public static class AppiumGridServer extends LocalGridServer {
 
         /**
-         * Constructor for local Appium node server object.
-         * 
+         * Constructor for local Grid Appium node server object.
+         *
          * @param host IP address of local Grid server
          * @param port port of local Grid server
          * @param isHub role of Grid server being started ({@code true} = hub; {@code false} = node)
-         * @param builder {@link ProcessBuilder} of local Grid server
+         * @param hubPort port of the hub for the Grid collection this server belongs to
+         * @param builder {@link ProcessBuilder} for local Grid server process
          * @param workingPath {@link Path} of working directory for server process; {@code null} for default
          * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
+         * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
          */
-        public AppiumGridServer(String host, Integer port, boolean isHub, ProcessBuilder builder, Path workingPath, Path outputPath) {
-            super(host, port, isHub, builder, workingPath, outputPath);
+        public AppiumGridServer(String host, Integer port, boolean isHub, int hubPort, ProcessBuilder builder,
+                Path workingPath, Path outputPath, RegistrationStrategy registrationStrategy) {
+            super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy);
         }
 
         /**
@@ -477,7 +444,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
          */
         public static boolean shutdownAppiumWithPM2(URL nodeUrl) {
             if ( ! GridUtility.isLocalHost(nodeUrl)) return false;
-            if ( ! isAppiumWithPM2(nodeUrl)) return false;
             
             int exitCode = 0;
             String executable;
@@ -513,33 +479,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
             }
             
             return exitCode == 0;
-        }
-
-        /**
-         * Determine if using 'pm2' for standalone execution of 'appium'.
-         * 
-         * @param nodeUrl {@link URL} object for target node server
-         * @return {@code true} if using 'pm2'; otherwise {@code false}
-         */
-        public static boolean isAppiumWithPM2(URL nodeUrl) {
-            SeleniumConfig config = SeleniumConfig.getConfig();
-            // check settings to determine if 'pm2' used for standalone execution of 'appium'
-            boolean appiumWithPM2 = config.getBoolean(SeleniumSettings.APPIUM_WITH_PM2.key());
-            // if undetermined
-            if (!appiumWithPM2) {
-                try {
-                    // get capabilities of 'appium' node
-                    Capabilities capabilities = 
-                            GridServer.getNodeCapabilities(config, config.getHubUrl(), nodeUrl).get(0);
-                    // get map of custom options from capabilities
-                    Map<String, Object> options = GridUtility.getNordOptions(capabilities);
-                    // determine is running 'appium' with 'pm2'
-                    appiumWithPM2 = options.containsKey("appiumWithPM2");
-                } catch (IndexOutOfBoundsException | IOException eaten) {
-                    // nothing to do here
-                }
-            }
-            return appiumWithPM2;
         }
     }
 }
