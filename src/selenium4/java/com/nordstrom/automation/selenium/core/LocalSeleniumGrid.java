@@ -21,7 +21,6 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.PidHubRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
-import com.nordstrom.automation.selenium.plugins.AbstractAppiumPlugin.AppiumGridServer;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
 import com.nordstrom.common.jar.JarUtils;
@@ -122,8 +121,9 @@ public class LocalSeleniumGrid extends SeleniumGrid {
     static boolean isGridReady(SeleniumConfig config, IGridServer hubServer, Collection<IGridServer> nodeServers) {
         if (!GridServer.isHubActive(hubServer.getUrl())) return false;
         for (IGridServer nodeServer : nodeServers) {
-            // if not an Appium Grid server
-            if (!(nodeServer instanceof AppiumGridServer)) {
+            if (nodeServer instanceof AppiumGridServer) {
+                if (!nodeServer.isActive()) return false;
+            } else {
                 if (!GridServer.isNodeRegistered(config, hubServer.getUrl(), nodeServer.getUrl())) return false;
             }
         }

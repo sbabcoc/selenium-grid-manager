@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,9 +28,8 @@ import org.slf4j.LoggerFactory;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
-import com.nordstrom.automation.selenium.core.GridUtility;
+import com.nordstrom.automation.selenium.core.AppiumGridServer;
 import com.nordstrom.automation.selenium.core.LocalGridServer;
-import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
@@ -77,12 +77,14 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     private static final Class<?>[] ARG_TYPES = {URL.class, Capabilities.class};
     
     private static final Pattern OPTION_PATTERN = Pattern.compile("\\s*(-[a-zA-Z0-9]+|--[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)");
+    private static final String APPIUM_HOME = "APPIUM_HOME";
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAppiumPlugin.class);
     
     private final String browserName;
     
     /**
-     * Base constructor for Appium plug-in objects.
+     * Base constructor for <b>Appium</b> plug-in objects.
      * 
      * @param browserName browser name
      */
@@ -249,6 +251,9 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         ProcessBuilder builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
         builder.environment().put("nodeConfigPath", nodeConfigPath.toString());
+        // set APPIUM_HOME to work around auto-detection issue
+        builder.environment().put(APPIUM_HOME, Optional.ofNullable(System.getenv(APPIUM_HOME))
+                .orElse(System.getProperty("user.home") + File.separator + ".appium"));
         return new AppiumGridServer(address, portNum, false, hubPort,
                 builder, workingPath, outputPath, new PM2RegistrationStrategy(3));
     }
@@ -395,84 +400,5 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
     private static IOException fileNotFound(String what, SeleniumSettings setting) {
         String template = "%s not found; configure the %s setting (key: %s)";
         return new FileNotFoundException(String.format(template, what, setting.name(), setting.key()));
-    }
-
-    /**
-     * This class represents a single Appium node server belonging to a local Grid collection.
-     */
-    public static class AppiumGridServer extends LocalGridServer {
-
-        /**
-         * Constructor for local Grid Appium node server object.
-         *
-         * @param host IP address of local Grid server
-         * @param port port of local Grid server
-         * @param isHub role of Grid server being started ({@code true} = hub; {@code false} = node)
-         * @param hubPort port of the hub for the Grid collection this server belongs to
-         * @param builder {@link ProcessBuilder} for local Grid server process
-         * @param workingPath {@link Path} of working directory for server process; {@code null} for default
-         * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
-         * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
-         */
-        public AppiumGridServer(String host, Integer port, boolean isHub, int hubPort,
-                ProcessBuilder builder, Path workingPath, Path outputPath,
-                RegistrationStrategy registrationStrategy) {
-            super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean shutdown() throws InterruptedException {
-            if (!isActive()) return true;
-            if (shutdownAppiumWithPM2(getUrl())) return true;
-            return super.shutdown();
-        }
-        
-        /**
-         * If the specified URL is a local 'appium' node running with 'pm2', delete the process.
-         * 
-         * @param nodeUrl {@link URL} object for target node server
-         * @return {@code true} if node was shut down; otherwise {@code false}
-         */
-        public static boolean shutdownAppiumWithPM2(URL nodeUrl) {
-            if ( ! GridUtility.isLocalHost(nodeUrl)) return false;
-            
-            int exitCode = 0;
-            String executable;
-            ProcessBuilder builder;
-            List<String> argsList = new ArrayList<>();
-            File pm2Binary = findPM2Binary().getAbsoluteFile();
-
-            argsList.add("delete");
-            argsList.add("appium-" + nodeUrl.getPort());
-            
-            if (SystemUtils.IS_OS_WINDOWS) {
-                executable = "cmd.exe";
-                argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
-                argsList.add(0, "/c");
-            } else {
-                executable = pm2Binary.getAbsolutePath();
-            }
-            
-            argsList.add(0, executable);
-            builder = new ProcessBuilder(argsList);
-            builder.environment().put("PATH", PathUtils.getSystemPath());
-            
-            try {
-                exitCode = builder.start().waitFor();
-                LOGGER.debug("Deleted PM2 process: appium-{}", nodeUrl.getPort());
-            } catch (IOException e) {
-                LOGGER.debug("I/O exception while shutting down PM2-managed Appium node", e);
-                exitCode = -1;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOGGER.debug("Interrupted while shutting down PM2-managed Appium node", e);
-                exitCode = -1;
-            }
-            
-            return exitCode == 0;
-        }
     }
 }

@@ -33,10 +33,9 @@ import org.slf4j.LoggerFactory;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
-import com.nordstrom.automation.selenium.core.GridUtility;
+import com.nordstrom.automation.selenium.core.AppiumGridServer;
 import com.nordstrom.automation.selenium.core.LocalGridServer;
 import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
-import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.common.file.PathUtils;
@@ -390,95 +389,6 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         } catch (InterruptedException cause) {
             Thread.currentThread().interrupt();
             throw new GridServerLaunchFailedException("node", cause);
-        }
-    }
-    
-    /**
-     * This class represents a single Appium node server belonging to a local Grid collection.
-     */
-    public static class AppiumGridServer extends LocalGridServer {
-
-        /**
-         * Constructor for local Grid Appium node server object.
-         *
-         * @param host IP address of local Grid server
-         * @param port port of local Grid server
-         * @param isHub role of Grid server being started ({@code true} = hub; {@code false} = node)
-         * @param hubPort port of the hub for the Grid collection this server belongs to
-         * @param builder {@link ProcessBuilder} for local Grid server process
-         * @param workingPath {@link Path} of working directory for server process; {@code null} for default
-         * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
-         * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
-         */
-        public AppiumGridServer(String host, Integer port, boolean isHub, int hubPort, ProcessBuilder builder,
-                Path workingPath, Path outputPath, RegistrationStrategy registrationStrategy) {
-            super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean shutdown() throws InterruptedException {
-            if (!isActive()) return true;
-            if (shutdownAppiumWithPM2(getUrl())) return true;
-            return super.shutdown();
-        }
-        
-        /**
-         * Get stored relay node configuration path. <br>
-         * <b>NOTE</b>: A relay node is needed to connect the Appium server to a Selenium 4+ Grid hub.
-         * 
-         * @return path to relay node configuration; may be {@code null}
-         */
-        public Path getNodeConfigPath() {
-            String nodeConfigPath = getEnvironment().get("nodeConfigPath");
-            return (nodeConfigPath != null) ? Paths.get(nodeConfigPath) : null;
-        }
-        
-        /**
-         * If the specified URL is a local 'appium' node running with 'pm2', delete the process.
-         * 
-         * @param nodeUrl {@link URL} object for target node server
-         * @return {@code true} if node was shut down; otherwise {@code false}
-         */
-        public static boolean shutdownAppiumWithPM2(URL nodeUrl) {
-            if ( ! GridUtility.isLocalHost(nodeUrl)) return false;
-            
-            int exitCode = 0;
-            String executable;
-            ProcessBuilder builder;
-            List<String> argsList = new ArrayList<>();
-            File pm2Binary = findPM2Binary().getAbsoluteFile();
-
-            argsList.add("delete");
-            argsList.add("appium-" + nodeUrl.getPort());
-            
-            if (SystemUtils.IS_OS_WINDOWS) {
-                executable = "cmd.exe";
-                argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
-                argsList.add(0, "/c");
-            } else {
-                executable = pm2Binary.getAbsolutePath();
-            }
-            
-            argsList.add(0, executable);
-            builder = new ProcessBuilder(argsList);
-            builder.environment().put("PATH", PathUtils.getSystemPath());
-            
-            try {
-                exitCode = builder.start().waitFor();
-                LOGGER.debug("Deleted PM2 process: appium-{}", nodeUrl.getPort());
-            } catch (IOException e) {
-                LOGGER.debug("I/O exception while shutting down PM2-managed Appium node", e);
-                exitCode = -1;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOGGER.debug("Interrupted while shutting down PM2-managed Appium node", e);
-                exitCode = -1;
-            }
-            
-            return exitCode == 0;
         }
     }
 }
