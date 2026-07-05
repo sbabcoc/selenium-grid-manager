@@ -44,7 +44,7 @@ public class EspressoPlugin extends AbstractAppiumPlugin {
      */
     @Override
     public String getCapabilities(SeleniumConfig config) {
-        return addNordOptions(config, CAPABILITIES);
+        return CAPABILITIES;
     }
 
     /**

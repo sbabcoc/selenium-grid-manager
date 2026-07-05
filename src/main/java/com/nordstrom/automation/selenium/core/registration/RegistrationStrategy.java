@@ -1,6 +1,6 @@
 package com.nordstrom.automation.selenium.core.registration;
 
-import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
+import com.nordstrom.automation.selenium.core.LocalGridServer;
 
 /**
  * Strategy for registering a grid server with the sidecar registry

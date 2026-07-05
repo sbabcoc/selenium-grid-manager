@@ -121,9 +121,6 @@ ext.pluginClasses = [
     xcuitest    : 'com.nordstrom.automation.selenium.plugins.XCUITestPlugin'
 ]
 
-/* Browsers that require PM2 for Appium */
-ext.appiumBrowsers = ['espresso', 'mac2', 'uiautomator2', 'windows', 'xcuitest'] as Set
-
 java {
     withJavadocJar()
     withSourcesJar()
@@ -240,10 +237,6 @@ tasks.register('runGrid', JavaExec) {
     if (plugins) {
         systemProperty 'selenium.grid.plugins', plugins
     }
-
-    // automatically enable PM2 if any Appium browser is selected
-    systemProperty 'appium.with.pm2',
-        selectedBrowsers.any { appiumBrowsers.contains(it) }
 
     // pass through exec args: ./gradlew runGrid -Pexec.args="-shutdown"
     if (project.hasProperty('exec.args')) {

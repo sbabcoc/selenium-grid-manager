@@ -17,6 +17,8 @@ import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.IGridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
+import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
+
 import net.bytebuddy.implementation.Implementation;
 
 /**
@@ -48,15 +50,16 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public IGridServer create(SeleniumConfig config, String launcherClassName, String[] dependencyContexts,
-            URL hubUrl, final Path workingPath, final Path outputPath) throws IOException {
-        
+    public IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+            String[] dependencyContexts, URL hubUrl, Path workingPath,
+            Path outputPath) throws IOException {
         String[] combinedContexts = combineDependencyContexts(dependencyContexts, this);
         String capabilities = getCapabilities(config);
         Path nodeConfigPath = config.createNodeConfig(capabilities, hubUrl);
         String[] propertyNames = getPropertyNames(capabilities);
         return LocalSeleniumGrid.create(config, launcherClassName, combinedContexts,
-                false, -1, nodeConfigPath, workingPath, outputPath, propertyNames);
+                false, -1, hubPort, getRegistrationStrategy(config),
+                nodeConfigPath, workingPath, outputPath, propertyNames);
     }
 
     /**
@@ -95,4 +98,25 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
                 .toArray(size -> (String[]) Array.newInstance(String.class, size));
     }
     
+    /**
+     * Get the {@link RegistrationStrategy} appropriate for the current Selenium API version.
+     * <p>
+     * For Selenium 3, returns a {@link LifecycleRegistrationStrategy} that uses the
+     * {@code LifecycleServlet} to register the node with the sidecar.
+     * For Selenium 4, returns a {@link PidNodeRegistrationStrategy} that uses the
+     * node process PID to register with the sidecar.
+     *
+     * @param config {@link SeleniumConfig} object
+     * @return {@link RegistrationStrategy} for registering this node server with the sidecar
+     */
+    private RegistrationStrategy getRegistrationStrategy(final SeleniumConfig config) {
+        String className = (config.getVersion() == 3) ?
+            "com.nordstrom.automation.selenium.core.registration.LifecycleRegistrationStrategy" :
+            "com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy";
+        try {
+            return (RegistrationStrategy) Class.forName(className).getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed instantiating RegistrationStrategy: " + className, e);
+        }
+    }
 }

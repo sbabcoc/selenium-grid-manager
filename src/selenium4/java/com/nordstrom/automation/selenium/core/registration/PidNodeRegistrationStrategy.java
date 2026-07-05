@@ -1,6 +1,6 @@
 package com.nordstrom.automation.selenium.core.registration;
 
-import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
+import com.nordstrom.automation.selenium.core.LocalGridServer;
 
 /**
  * {@link RegistrationStrategy} for Selenium 4 standard nodes and relay nodes.

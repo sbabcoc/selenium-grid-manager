@@ -1,6 +1,6 @@
 package com.nordstrom.automation.selenium.core.registration;
 
-import com.nordstrom.automation.selenium.core.LocalSeleniumGrid.LocalGridServer;
+import com.nordstrom.automation.selenium.core.LocalGridServer;
 
 /**
  * {@link RegistrationStrategy} for Selenium 3 hub and node servers,

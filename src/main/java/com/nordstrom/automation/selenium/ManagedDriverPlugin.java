@@ -57,7 +57,7 @@ public interface ManagedDriverPlugin extends DriverPlugin {
         String[] dependencyContexts = config.getDependencyContexts();
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
         Path workingPath = (workingDir == null || workingDir.isEmpty()) ? null : Paths.get(workingDir);
-        return create(config, launcherClassName, dependencyContexts, hubUrl, workingPath);
+        return create(config, hubUrl.getPort(), launcherClassName, dependencyContexts, hubUrl, workingPath);
     }
 
     /**
@@ -71,11 +71,28 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * @return {@link IGridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    default IGridServer create(SeleniumConfig config, String launcherClassName, String[] dependencyContexts,
-            URL hubUrl, Path workingPath) throws IOException {
+    default IGridServer create(SeleniumConfig config, String launcherClassName,
+            String[] dependencyContexts, URL hubUrl, Path workingPath) throws IOException {
+        return create(config, hubUrl.getPort(), launcherClassName, dependencyContexts, hubUrl, workingPath);
+    }
+
+    /**
+     * Start local Selenium Grid node for this driver.
+     *
+     * @param config {@link SeleniumConfig} object
+     * @param hubPort port of the Grid hub with which node should register
+     * @param launcherClassName fully-qualified name of {@code GridLauncher} class
+     * @param dependencyContexts fully-qualified names of context classes for Selenium Grid dependencies
+     * @param hubUrl Grid hub {@link URL} with which node should register
+     * @param workingPath {@link Path} of working directory for server process; {@code null} for default
+     * @return {@link IGridServer} object for specified node
+     * @throws IOException if an I/O error occurs
+     */
+    default IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+            String[] dependencyContexts, URL hubUrl, Path workingPath) throws IOException {
         Path outputPath = LocalGridUtility.getOutputPath(config, false);
         IGridServer nodeServer =
-                create(config, launcherClassName, dependencyContexts, hubUrl, workingPath, outputPath);
+                create(config, hubPort, launcherClassName, dependencyContexts, hubUrl, workingPath, outputPath);
         nodeServer.getPersonalities().putAll(getPersonalities());
         return nodeServer;
     }
@@ -84,6 +101,7 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * Start local Selenium Grid node for this driver.
      *
      * @param config {@link SeleniumConfig} object
+     * @param hubPort port of the Grid hub with which node should register
      * @param launcherClassName fully-qualified class name for Grid launcher
      * @param dependencyContexts common dependency contexts for all Grid nodes
      * @param hubUrl Grid hub {@link URL} with which node should register
@@ -92,6 +110,7 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * @return {@link IGridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    IGridServer create(SeleniumConfig config, String launcherClassName, String[] dependencyContexts,
-            URL hubUrl, Path workingPath, Path outputPath) throws IOException;
+    IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+            String[] dependencyContexts, URL hubUrl, Path workingPath,
+            Path outputPath) throws IOException;
 }
