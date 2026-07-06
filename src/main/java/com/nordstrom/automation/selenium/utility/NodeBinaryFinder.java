@@ -65,6 +65,26 @@ public class NodeBinaryFinder {
     }
     
     /**
+     * Find the 'npm' (Node Package Manager) binary.
+     * 
+     * @return path to the 'npm' binary as a {@link File} object
+     * @throws GridServerLaunchFailedException if 'npm' isn't found
+     */
+    public static File findNPMBinary() throws GridServerLaunchFailedException {
+        return findBinary("npm", SeleniumSettings.NPM_BINARY_PATH, "'npm' package manager");
+    }
+    
+    /**
+     * Find the 'pm2' binary.
+     * 
+     * @return path to the 'pm2' binary as a {@link File} object
+     * @throws GridServerLaunchFailedException if 'node' isn't found
+     */
+    public static File findPM2Binary() throws GridServerLaunchFailedException {
+        return findBinary("pm2", SeleniumSettings.PM2_BINARY_PATH, "'pm2' process manager");
+    }
+    
+    /**
      * Assemble a 'file not found' exception for the indicated binary.
      * 
      * @param what human-readable description of binary

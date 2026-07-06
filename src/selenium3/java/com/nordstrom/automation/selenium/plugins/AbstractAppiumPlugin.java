@@ -1,42 +1,23 @@
 package com.nordstrom.automation.selenium.plugins;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.SystemUtils;
-import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.net.PortProber;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
-import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.AppiumGridServer;
 import com.nordstrom.automation.selenium.core.LocalGridServer;
 import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
-import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
-
-import net.bytebuddy.implementation.Implementation;
 
 /**
  * This class provides the base plug-in implementation for drivers provided by {@code appium}.
@@ -66,56 +47,17 @@ import net.bytebuddy.implementation.Implementation;
  *  &lt;/exclusions&gt;
  *&lt;/dependency&gt;</pre>
  */
-public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
+public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
 
-    private static final String[] DEPENDENCY_CONTEXTS = {};
-    private static final String[] APPIUM_PATH_TAIL = { "appium", "build", "lib", "main.js" };
-	private static final String[] PROPERTY_NAMES = { SeleniumSettings.APPIUM_CLI_ARGS.key(),
-			SeleniumSettings.NPM_BINARY_PATH.key(), SeleniumSettings.NODE_BINARY_PATH.key(),
-			SeleniumSettings.PM2_BINARY_PATH.key(), SeleniumSettings.APPIUM_BINARY_PATH.key() };
-    
-    private static final Class<?>[] ARG_TYPES = {URL.class, Capabilities.class};
-    
-    private static final Pattern OPTION_PATTERN = Pattern.compile("\\s*(-[a-zA-Z0-9]+|--[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)");
-    private static final String APPIUM_HOME = "APPIUM_HOME";
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAppiumPlugin.class);
-    
-    private final String browserName;
-    
     /**
      * Base constructor for <b>Appium</b> plug-in objects.
      * 
      * @param browserName browser name
      */
     protected AbstractAppiumPlugin(String browserName) {
-        this.browserName = browserName;
+        super(browserName);
     }
     
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String[] getDependencyContexts() {
-        return DEPENDENCY_CONTEXTS;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getBrowserName() {
-        return browserName;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String[] getPropertyNames(String capabilities) {
-        return PROPERTY_NAMES;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -213,7 +155,7 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
         
         String appiumBinaryPath = findMainScript().getAbsolutePath();
         
-        File pm2Binary = findPM2Binary().getAbsoluteFile();
+        File pm2Binary = NodeBinaryFinder.findPM2Binary().getAbsoluteFile();
         String winQuote = (SystemUtils.IS_OS_WINDOWS) ? "\"" : "";
         
         argsList.add(0, "--");
@@ -256,149 +198,5 @@ public abstract class AbstractAppiumPlugin implements ManagedDriverPlugin {
                 .orElse(System.getProperty("user.home") + File.separator + ".appium"));
         return new AppiumGridServer(address, portNum, false, hubPort,
                 builder, workingPath, outputPath, new PM2RegistrationStrategy(3));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Implementation getWebElementCtor(WebDriver driver, Class<? extends WebElement> refClass) {
-        return null;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends RemoteWebDriver> Constructor<T> getRemoteWebDriverCtor(Capabilities desiredCapabilities) {
-        String automationName = (String) desiredCapabilities.getCapability("appium:automationName");
-        if (automationName == null) {
-            automationName = (String) desiredCapabilities.getCapability("automationName");
-        }
-        if (getBrowserName().equalsIgnoreCase(automationName)) {
-            try {
-                return (Constructor<T>) Class.forName(getDriverClassName()).getConstructor(ARG_TYPES);
-            } catch (SecurityException | ClassNotFoundException | NoSuchMethodException | ClassCastException eaten) {
-                // nothing to do here
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get the name of the {@link WebDriver} implementation for this plug-in.
-     * 
-     * @return driver-specific {@link WebDriver} class name
-     */
-    public abstract String getDriverClassName();
-    
-    /**
-     * Find the 'npm' (Node Package Manager) binary.
-     * 
-     * @return path to the 'npm' binary as a {@link File} object
-     * @throws GridServerLaunchFailedException if 'npm' isn't found
-     */
-    private static File findNPMBinary() throws GridServerLaunchFailedException {
-        return findBinary("npm", SeleniumSettings.NPM_BINARY_PATH, "'npm' package manager");
-    }
-    
-    /**
-     * Find the 'pm2' binary.
-     * 
-     * @return path to the 'pm2' binary as a {@link File} object
-     * @throws GridServerLaunchFailedException if 'node' isn't found
-     */
-    private static File findPM2Binary() throws GridServerLaunchFailedException {
-        return findBinary("pm2", SeleniumSettings.PM2_BINARY_PATH, "'pm2' process manager");
-    }
-    
-    /**
-     * Find the 'appium' main script in the global 'node' modules repository.
-     * 
-     * @return path path to the 'appium' main script as a {@link File} object
-     * @throws GridServerLaunchFailedException if the 'appium' main script isn't found
-     */
-    private static File findMainScript() throws GridServerLaunchFailedException {
-        // check configuration for path to 'appium' main script
-        try {
-            return NodeBinaryFinder.findBinary("main.js", SeleniumSettings.APPIUM_BINARY_PATH, "'appium' main script");
-        } catch (GridServerLaunchFailedException eaten) {
-            // path not specified - check modules repository below
-        }
-        
-        // check for 'appium' main script in global 'node' modules repository
-        
-        String nodeModulesRoot;
-        File npm = findNPMBinary().getAbsoluteFile();
-        
-        String executable;
-        List<String> argsList = new ArrayList<>();
-        
-        if (SystemUtils.IS_OS_WINDOWS) {
-            executable = "cmd.exe";
-            argsList.add("/c");
-            argsList.add("\"" + npm.getAbsolutePath() + "\"");
-        } else {
-            executable = npm.getAbsolutePath();
-        }
-        
-        argsList.add("root");
-        argsList.add("-g");
-        
-        argsList.add(0, executable);
-        ProcessBuilder builder = new ProcessBuilder(argsList);
-        builder.environment().put("PATH", PathUtils.getSystemPath());
-        
-        try {
-            Process process = builder.start();
-            process.waitFor();
-            
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                nodeModulesRoot = reader.lines().parallel().collect(Collectors.joining("\n"));
-            }
-            
-            int index = nodeModulesRoot.lastIndexOf('\n');
-            if (index > 0) nodeModulesRoot = nodeModulesRoot.substring(index).trim();
-            File appiumMain = Paths.get(nodeModulesRoot, APPIUM_PATH_TAIL).toFile();
-            if (appiumMain.exists()) return appiumMain;
-            throw NodeBinaryFinder.fileNotFound("'appium' main script", SeleniumSettings.APPIUM_BINARY_PATH);
-        } catch (IOException cause) {
-            throw new GridServerLaunchFailedException("node", cause);
-        } catch (InterruptedException cause) {
-            Thread.currentThread().interrupt();
-            throw new GridServerLaunchFailedException("node", cause);
-        }
-    }
-    
-    /**
-     * Find the specified binary.
-     * 
-     * @param exeName file name of binary to find
-     * @param setting associated configuration setting
-     * @param what human-readable description of binary
-     * @return path to specified binary as a {link File} object
-     * @throws GridServerLaunchFailedException if specified binary isn't found
-     */
-    private static File findBinary(String exeName, SeleniumSettings setting, String what)
-            throws GridServerLaunchFailedException {
-        try {
-            return NodeBinaryFinder.findBinary(exeName, setting.key());
-        } catch (IllegalStateException eaten) {
-            IOException cause = fileNotFound(what, setting);
-            throw new GridServerLaunchFailedException("node", cause);
-        }
-    }
-    
-    /**
-     * Assemble a 'file not found' exception for the indicated binary.
-     * 
-     * @param what human-readable description of binary
-     * @param setting associated configuration setting
-     * @return {@link FileNotFoundException} object
-     */
-    private static IOException fileNotFound(String what, SeleniumSettings setting) {
-        String template = "%s not found; configure the %s setting (key: %s)";
-        return new FileNotFoundException(String.format(template, what, setting.name(), setting.key()));
     }
 }
