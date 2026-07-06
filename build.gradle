@@ -134,6 +134,10 @@ application {
 /* Clean */
 tasks.named('clean') {
     delete 'logs', 'target', buildRoot
+    delete fileTree('.') {
+        include 'hubConfig*.json'
+        include 'nodeConfig*.json'
+    }
 }
 
 /* JaCoCo */
