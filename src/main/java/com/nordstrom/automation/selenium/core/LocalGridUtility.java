@@ -5,7 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.openqa.selenium.net.PortProber;
 
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
@@ -83,5 +86,16 @@ public final class LocalGridUtility {
                 .filter(p -> p instanceof ManagedDriverPlugin)
                 .map(p -> (ManagedDriverPlugin) p)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get port number associated with the specified setting.
+     * 
+     * @param config {@link SeleniumConfig} object
+     * @param setting associated configuration setting
+     * @return resolved port number
+     */
+    public static Integer getLocalGridPort(SeleniumConfig config, SeleniumSettings setting) {
+        return Optional.ofNullable(config.getInteger(setting.key(), null)).orElse(PortProber.findFreePort());
     }
 }

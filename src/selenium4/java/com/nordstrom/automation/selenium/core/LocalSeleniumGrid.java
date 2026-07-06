@@ -166,10 +166,10 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // get hub port:
             // - if hub URL if specified, extract port from URL
             // - otherwise, use specified hub port, defaulting to -1
-            Integer hubPort = (hubUrl != null) ?
-                    hubUrl.getPort() : config.getInteger(SeleniumSettings.HUB_PORT.key(), -1);
-            int pubPort = PortProber.findFreePort();
-            int subPort = PortProber.findFreePort();
+            int hubPort = (hubUrl != null) ? hubUrl.getPort() :
+                LocalGridUtility.getLocalGridPort(config, SeleniumSettings.HUB_PORT);
+            int pubPort = LocalGridUtility.getLocalGridPort(config, SeleniumSettings.GRID_PUB_PORT);
+            int subPort = LocalGridUtility.getLocalGridPort(config, SeleniumSettings.GRID_SUB_PORT);
             Path outputPath = LocalGridUtility.getOutputPath(config, true);
             hubServer = create(config, launcherClassName, dependencyContexts, true, hubPort, hubPort,
                     new PidHubRegistrationStrategy(pubPort, subPort), hubConfigPath, workingPath, outputPath);
@@ -278,12 +278,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         argsList.add(OPT_HOST);
         argsList.add(hostUrl);
         
-        Integer portNum = port;
-        // if port auto-select spec'd
-        if (portNum == -1) {
-            // acquire available port
-            portNum = PortProber.findFreePort();
-        }
+        Integer portNum = (port == -1) ? PortProber.findFreePort() : port;
         
         // specify server port
         argsList.add(OPT_PORT);
