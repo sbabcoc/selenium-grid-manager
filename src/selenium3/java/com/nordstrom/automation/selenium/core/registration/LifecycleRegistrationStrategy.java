@@ -23,7 +23,10 @@ public class LifecycleRegistrationStrategy implements RegistrationStrategy {
     @Override
     public void register(LocalGridServer server, Process process) {
         try {
-            URL lifecycleUrl = new URL(server.getUrl(), "/extra/LifecycleServlet");
+            String path = server.isHub()
+                    ? "/grid/admin/LifecycleServlet?action=shutdown"
+                    : "/extra/LifecycleServlet?action=shutdown";
+            URL lifecycleUrl = new URL(server.getUrl(), path);
             SidecarClient.register(GridServerRegistration.forLifecycle(
                     server.getHubPort(), server.getUrl(), server.isHub(), lifecycleUrl));
         } catch (MalformedURLException e) {
