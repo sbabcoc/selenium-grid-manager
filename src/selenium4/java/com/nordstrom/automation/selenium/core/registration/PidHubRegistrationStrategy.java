@@ -1,6 +1,8 @@
 package com.nordstrom.automation.selenium.core.registration;
 
 import com.nordstrom.automation.selenium.core.LocalGridServer;
+import com.nordstrom.automation.selenium.sidecar.GridServerRegistration;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 
 /**
  * {@link RegistrationStrategy} for Selenium 4 hub servers.
@@ -29,9 +31,7 @@ public class PidHubRegistrationStrategy implements RegistrationStrategy {
      */
     @Override
     public void register(LocalGridServer server, Process process) {
-        // TODO: Phase 2 - construct GridServerRegistration and pass to SidecarClient
-        // SidecarClient.register(GridServerRegistration.forPid(
-        //     server.getHubPort(), server.getUrl(), true,
-        //     process.pid(), pubPort, subPort));
+        SidecarClient.register(GridServerRegistration.forPidHub(
+                server.getHubPort(), server.getUrl(), process.pid(), pubPort, subPort));
     }
 }

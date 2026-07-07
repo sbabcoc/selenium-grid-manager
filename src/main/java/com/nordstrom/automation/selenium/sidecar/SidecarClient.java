@@ -1,4 +1,4 @@
-package com.nordstrom.automation.selenium.core;
+package com.nordstrom.automation.selenium.sidecar;
 
 /**
  * Client for communicating with the sidecar servlet container.

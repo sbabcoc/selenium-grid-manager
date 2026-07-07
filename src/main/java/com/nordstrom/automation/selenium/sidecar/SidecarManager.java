@@ -1,4 +1,4 @@
-package com.nordstrom.automation.selenium.core;
+package com.nordstrom.automation.selenium.sidecar;
 
 /**
  * Manager for the sidecar servlet container.

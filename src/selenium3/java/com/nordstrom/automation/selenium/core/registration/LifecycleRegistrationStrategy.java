@@ -1,6 +1,13 @@
 package com.nordstrom.automation.selenium.core.registration;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import com.nordstrom.automation.selenium.core.LocalGridServer;
+import com.nordstrom.automation.selenium.sidecar.GridServerRegistration;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
+
+import com.nordstrom.common.base.UncheckedThrow;
 
 /**
  * {@link RegistrationStrategy} for Selenium 3 hub and node servers,
@@ -15,13 +22,12 @@ public class LifecycleRegistrationStrategy implements RegistrationStrategy {
      */
     @Override
     public void register(LocalGridServer server, Process process) {
-        // TODO: Phase 2 - construct GridServerRegistration and pass to SidecarClient
-        // try {
-        //     URL lifecycleUrl = new URL(server.getUrl(), "/extra/LifecycleServlet");
-        //     SidecarClient.register(GridServerRegistration.forLifecycle(
-        //         server.getHubPort(), server.getUrl(), server.isHub(), lifecycleUrl));
-        // } catch (MalformedURLException e) {
-        //     throw UncheckedThrow.throwUnchecked(e);
-        // }
+        try {
+            URL lifecycleUrl = new URL(server.getUrl(), "/extra/LifecycleServlet");
+            SidecarClient.register(GridServerRegistration.forLifecycle(
+                    server.getHubPort(), server.getUrl(), server.isHub(), lifecycleUrl));
+        } catch (MalformedURLException e) {
+            throw UncheckedThrow.throwUnchecked(e);
+        }
     }
 }
