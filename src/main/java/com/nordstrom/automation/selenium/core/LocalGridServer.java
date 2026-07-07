@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.uri.UriUtils;
 

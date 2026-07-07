@@ -1,6 +1,8 @@
 package com.nordstrom.automation.selenium.core.registration;
 
 import com.nordstrom.automation.selenium.core.LocalGridServer;
+import com.nordstrom.automation.selenium.sidecar.GridServerRegistration;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 
 /**
  * {@link RegistrationStrategy} for all Appium servers across Selenium 3 and 4.
@@ -28,8 +30,7 @@ public class PM2RegistrationStrategy implements RegistrationStrategy {
      */
     @Override
     public void register(LocalGridServer server, Process process) {
-        // TODO: Phase 2 - construct GridServerRegistration and pass to SidecarClient
-        // SidecarClient.register(GridServerRegistration.forAppiumPM2(
-        //     server.getHubPort(), server.getUrl(), apiVersion));
+        SidecarClient.register(GridServerRegistration.forAppiumPM2(
+                server.getHubPort(), server.getUrl(), apiVersion));
     }
 }

@@ -21,6 +21,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.PidHubRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
+import com.nordstrom.automation.selenium.sidecar.SidecarManager;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
 import com.nordstrom.common.jar.JarUtils;
