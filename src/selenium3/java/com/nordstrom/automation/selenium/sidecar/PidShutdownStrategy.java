@@ -26,7 +26,7 @@ import com.nordstrom.common.file.PathUtils;
  *
  * @since [next-major]
  */
-class PidShutdownStrategy {
+class PidShutdownStrategy implements ShutdownStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PidShutdownStrategy.class);
 
@@ -40,7 +40,7 @@ class PidShutdownStrategy {
      *
      * @param registration {@link GridServerRegistration} of the server to shut down
      */
-    void shutdown(GridServerRegistration registration) {
+    public void shutdown(GridServerRegistration registration) {
         long pid = registration.getPid();
         try {
             List<String> args = new ArrayList<>();
