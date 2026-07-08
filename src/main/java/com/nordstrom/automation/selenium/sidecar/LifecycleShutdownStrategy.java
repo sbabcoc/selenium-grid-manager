@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  *
  * @since [next-major]
  */
-class LifecycleShutdownStrategy {
+class LifecycleShutdownStrategy implements ShutdownStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LifecycleShutdownStrategy.class);
 
@@ -28,7 +28,7 @@ class LifecycleShutdownStrategy {
      * @param registration {@link GridServerRegistration} of the server to shut down
      * @throws IOException if the HTTP request fails
      */
-    void shutdown(GridServerRegistration registration) throws IOException {
+    public void shutdown(GridServerRegistration registration) throws IOException {
         URL lifecycleUrl = registration.getLifecycleUrl();
         HttpURLConnection conn = (HttpURLConnection) lifecycleUrl.openConnection();
         try {

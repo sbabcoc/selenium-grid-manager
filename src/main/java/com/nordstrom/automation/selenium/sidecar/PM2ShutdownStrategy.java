@@ -21,7 +21,7 @@ import com.nordstrom.common.file.PathUtils;
  *
  * @since [next-major]
  */
-class PM2ShutdownStrategy {
+class PM2ShutdownStrategy implements ShutdownStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PM2ShutdownStrategy.class);
 
@@ -32,7 +32,7 @@ class PM2ShutdownStrategy {
      * @param registration {@link GridServerRegistration} of the server to shut down
      * @throws InterruptedException if interrupted while waiting for PM2 to complete
      */
-    void shutdown(GridServerRegistration registration) throws InterruptedException {
+    public void shutdown(GridServerRegistration registration) throws InterruptedException {
         int port = registration.getServerUrl().getPort();
         String pm2Name = "appium-" + port;
 
