@@ -21,6 +21,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.PidHubRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
+import com.nordstrom.automation.selenium.sidecar.GridHubPortAllocator;
 import com.nordstrom.automation.selenium.sidecar.SidecarManager;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
@@ -156,24 +157,33 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
         Path workingPath = (workingDir == null || workingDir.isEmpty()) ? null : Paths.get(workingDir);
         
-        // if specified hub is already active
-        if (hubUrl != null && GridServer.isHubActive(hubUrl)) {
-            seleniumGrid = new SeleniumGrid(config, hubUrl);
+        Path hubConfigPath = config.createHubConfig();
+        String hostUrl = HostUtils.getLocalHost();
+
+        // resolve hub URL from parameter, configured port, or null
+        Integer configuredHubPort = config.getInteger(SeleniumSettings.HUB_PORT.key(), null);
+        URL resolvedHubUrl = (hubUrl != null) ? hubUrl
+                : (configuredHubPort != null) ? LocalGridServer.getServerUrl(hostUrl, configuredHubPort)
+                : null;
+
+        // if a hub URL is resolvable and already active — reconnect
+        if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
+            seleniumGrid = new SeleniumGrid(config, resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
-        // otherwise (creating new local Grid)
-        } else {
-            // create hub configuration
-            Path hubConfigPath = config.createHubConfig();
-            // get hub port:
-            // - if hub URL if specified, extract port from URL
-            // - otherwise, use specified hub port, defaulting to -1
-            int hubPort = (hubUrl != null) ? hubUrl.getPort() :
-                LocalGridUtility.getLocalGridPort(config, SeleniumSettings.HUB_PORT);
-            int pubPort = LocalGridUtility.getLocalGridPort(config, SeleniumSettings.GRID_PUB_PORT);
-            int subPort = LocalGridUtility.getLocalGridPort(config, SeleniumSettings.GRID_SUB_PORT);
-            Path outputPath = LocalGridUtility.getOutputPath(config, true);
+        // otherwise — launch new hub
+        } else if (resolvedHubUrl != null) {
+            // hub URL or port was specified — allocate PUB/SUB relative to that port
+            int hubPort = resolvedHubUrl.getPort();
+            GridHubPortAllocator.GridPorts ports = GridHubPortAllocator.allocate(hubPort - 2);
             hubServer = create(config, launcherClassName, dependencyContexts, true, hubPort, hubPort,
-                    new PidHubRegistrationStrategy(pubPort, subPort), hubConfigPath, workingPath, outputPath);
+                    new PidHubRegistrationStrategy(ports.eventBusPubPort, ports.eventBusSubPort),
+                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true));
+        } else {
+            // nothing configured — allocate full bundle
+            GridHubPortAllocator.GridPorts ports = GridHubPortAllocator.allocate();
+            hubServer = create(config, launcherClassName, dependencyContexts, true, ports.hubPort, ports.hubPort,
+                    new PidHubRegistrationStrategy(ports.eventBusPubPort, ports.eventBusSubPort),
+                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true));
         }
         
         // store hub host and hub port in system properties for subsequent retrieval
