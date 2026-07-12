@@ -39,51 +39,43 @@ public class HubStatus {
     }
 
     /**
-     * Get the status for a managed Selenium 3 hub.
-     * 
-     * @param hubUrl {@link URL} of the hub
-     * @param active {@code true} if the hub is active
-     * @return managed Selenium 3 hub status
+     * Create a {@link HubStatus} for a managed Grid hub of the specified API version.
+     * <p>
+     * Returns {@code null} if the specified API version is not recognized.
+     *
+     * @param hubUrl {@link URL} of the managed hub
+     * @param apiVersion Selenium API version (3 or 4)
+     * @param active {@code true} if the hub is currently active
+     * @param pubPort event bus publisher port; {@code null} if not applicable
+     * @param subPort event bus subscriber port; {@code null} if not applicable
+     * @return {@link HubStatus} for the managed hub, or {@code null} if the API version
+     *         is not recognized
      * @since [next-major]
      */
-    public static HubStatus forSelenium3(URL hubUrl, boolean active) {
-        return new HubStatus(hubUrl, active, 3, null, null, true, false);
+    public static HubStatus managed(URL hubUrl, int apiVersion, boolean active,
+            Integer pubPort, Integer subPort) {
+        if (apiVersion == 3) return new HubStatus(hubUrl, active, 3, null, null, true, false);
+        if (apiVersion == 4) return new HubStatus(hubUrl, active, 4, pubPort, subPort, true, false);
+        return null;
     }
 
     /**
-     * Get the status for a managed Selenium 4 hub.
-     * 
-     * @param hubUrl {@link URL} of the hub
-     * @param active {@code true} if the hub is active
-     * @param pubPort event bus publisher port
-     * @param subPort event bus subscriber port
-     * @return managed Selenium 4 hub status
+     * Create a {@link HubStatus} for a discovered unmanaged Grid hub of the specified API version.
+     * <p>
+     * Returns {@code null} if the specified API version is not recognized, allowing callers
+     * to use a simple null check to filter out non-Grid servers.
+     *
+     * @param hubUrl {@link URL} of the discovered hub
+     * @param apiVersion Selenium API version (3 or 4)
+     * @return {@link HubStatus} for the discovered hub, or {@code null} if the API version
+     *         is not recognized
      * @since [next-major]
      */
-    public static HubStatus forSelenium4(URL hubUrl, boolean active, Integer pubPort, Integer subPort) {
-        return new HubStatus(hubUrl, active, 4, pubPort, subPort, true, false);
-    }
-
-    /**
-     * Get the status for a discovered Selenium 3 hub.
-     * 
-     * @param hubUrl {@link URL} of the hub
-     * @return discovered Selenium 3 hub status
-     * @since [next-major]
-     */
-    public static HubStatus discoveredSelenium3(URL hubUrl) {
-        return new HubStatus(hubUrl, true, 3, null, null, false, false);
-    }
-
-    /**
-     * Get the status for a discovered Selenium 4 hub.
-     * 
-     * @param hubUrl {@link URL} of the hub
-     * @return discovered Selenium 4 hub status
-     * @since [next-major]
-     */
-    public static HubStatus discoveredSelenium4(URL hubUrl) {
-        return new HubStatus(hubUrl, true, 4, null, null, false, false);
+    public static HubStatus discovered(URL hubUrl, int apiVersion) {
+        if (apiVersion == 3 || apiVersion == 4) {
+            return new HubStatus(hubUrl, true, apiVersion, null, null, false, false);
+        }
+        return null;
     }
 
     /**

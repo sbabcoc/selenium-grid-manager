@@ -133,11 +133,9 @@ public class GridRegistry {
                 for (GridServerRegistration r : servers) {
                     if (r.isHub()) {
                         boolean active = GridServer.isHubActive(r.getServerUrl());
-                        HubStatus status = r.getApiVersion() == 4
-                                ? HubStatus.forSelenium4(r.getServerUrl(), active,
-                                        r.getPubPort(), r.getSubPort())
-                                : HubStatus.forSelenium3(r.getServerUrl(), active);
-                        statuses.add(status);
+                        HubStatus status = HubStatus.managed(r.getServerUrl(), r.getApiVersion(),
+                                active, r.getPubPort(), r.getSubPort());
+                        if (status != null) statuses.add(status);
                     }
                 }
             }

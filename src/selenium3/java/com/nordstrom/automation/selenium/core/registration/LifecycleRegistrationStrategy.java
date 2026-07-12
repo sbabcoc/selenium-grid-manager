@@ -24,7 +24,7 @@ public class LifecycleRegistrationStrategy implements RegistrationStrategy {
     @Override
     public void register(LocalGridServer server, Process process) {
         try {
-            String path = server.isHub() ? "/grid/admin/LifecycleServlet" : "/extra/LifecycleServlet";
+            String path = server.isHub() ? "/lifecycle-manager/LifecycleServlet" : "/extra/LifecycleServlet";
             URL lifecycleUrl = UriUtils.uriForPath(server.getUrl(), path, "action=shutdown").toURL();
             SidecarClient.register(GridServerRegistration.forLifecycle(
                     server.getHubPort(), server.getUrl(), server.isHub(), lifecycleUrl));
