@@ -32,10 +32,9 @@ class LifecycleShutdownStrategy implements ShutdownStrategy {
         URL lifecycleUrl = registration.getLifecycleUrl();
         HttpURLConnection conn = (HttpURLConnection) lifecycleUrl.openConnection();
         try {
-            conn.setRequestMethod("POST");
+            conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            conn.setDoOutput(true);
             int responseCode = conn.getResponseCode();
             LOGGER.debug("LifecycleServlet responded {} for server at {}",
                     responseCode, registration.getServerUrl());

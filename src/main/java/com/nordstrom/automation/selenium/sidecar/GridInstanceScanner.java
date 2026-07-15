@@ -1,7 +1,5 @@
 package com.nordstrom.automation.selenium.sidecar;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -20,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
-import com.nordstrom.automation.selenium.core.GridServer;
+import com.nordstrom.automation.selenium.core.GridUtility;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 
 /**
@@ -159,13 +157,10 @@ public class GridInstanceScanner {
         while (port <= scanEnd && System.currentTimeMillis() < chunkEnd) {
             if (!managedPorts.contains(port)) {
                 URL candidate = buildHubUrl(port);
-                if (candidate != null && GridServer.isHubActive(candidate)) {
+                if (candidate != null) {
                     int apiVersion = probeApiVersion(candidate);
-                    HubStatus status = apiVersion == 4
-                            ? HubStatus.discoveredSelenium4(candidate)
-                            : HubStatus.discoveredSelenium3(candidate);
-                    // only add if not already in the cache
-                    if (!previousUrls.contains(candidate)) {
+                    HubStatus status = HubStatus.discovered(candidate, apiVersion);
+                    if (status != null && !previousUrls.contains(candidate)) {
                         found.add(status);
                         LOGGER.debug("Discovered unmanaged Selenium {} Grid at: {}", apiVersion, candidate);
                     }
@@ -231,17 +226,12 @@ public class GridInstanceScanner {
      * For servers we launch ourselves, the API version is always passed explicitly.
      *
      * @param hubUrl {@link URL} of the hub to probe
-     * @return 4 if the server appears to be Selenium 4; otherwise 3
+     * @return 4 if the server is a Selenium 4 hub; 3 if it is a Selenium 3 hub;
+     *         -1 if the server is not a recognized Selenium Grid hub
      */
     private static int probeApiVersion(URL hubUrl) {
-        try {
-            URL probe = new URL(hubUrl, "/ui");
-            HttpURLConnection conn = (HttpURLConnection) probe.openConnection();
-            conn.setConnectTimeout(500);
-            conn.setReadTimeout(500);
-            return conn.getResponseCode() == 200 ? 4 : 3;
-        } catch (IOException e) {
-            return 3;
-        }
+        if (GridUtility.isSelenium4Hub(hubUrl)) return 4;
+        if (GridUtility.isSelenium3Hub(hubUrl)) return 3;
+        return -1;
     }
 }

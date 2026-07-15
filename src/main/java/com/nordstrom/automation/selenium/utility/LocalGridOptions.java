@@ -24,8 +24,19 @@ public class LocalGridOptions {
     @Parameter(names = "-port", description = "Port for local hub server")
     private Integer port;
 
-    @Parameter(names = "-gridServlets", description = "Comma-delimited list of fully-qualified servlet classes to install")
-    private String gridServlets;
+    @Parameter(names = "-hubServlets",
+            description = "Comma-delimited list of fully-qualified servlet classes to install on the hub server (Selenium 3 only)")
+    private String hubServlets;
+
+    @Parameter(names = "-nodeServlets",
+            description = "Comma-delimited list of fully-qualified servlet classes to install on node servers (Selenium 3 only)")
+    private String nodeServlets;
+
+    @Parameter(names = "-serveExampleSite",
+            description = "Whether to serve the example page site alongside the local Grid instance. "
+                    + "NOTE: Has no effect if the sidecar is already active.",
+            arity = 1)
+    private Boolean serveExampleSite;
 
     @Parameter(names = "-shutdown", description = "Shutdown active local Grid")
     private boolean shutdown = false;
@@ -44,7 +55,7 @@ public class LocalGridOptions {
 
     /**
      * Get the specified Grid hub port.
-     * 
+     *
      * @return Grid hub port; {@code null} if no port was specified
      */
     public Integer getPort() {
@@ -53,8 +64,8 @@ public class LocalGridOptions {
 
     /**
      * Get the list of specified browser plug-ins.
-     * 
-     * @return list of fully-qualified browser plug-in class names; empty list if no plug-ins were specified 
+     *
+     * @return list of fully-qualified browser plug-in class names; empty list if no plug-ins were specified
      */
     public List<String> getPlugins() {
         return plugins;
@@ -62,7 +73,7 @@ public class LocalGridOptions {
 
     /**
      * Determine whether shutdown of specified local Grid instances was requested.
-     * 
+     *
      * @return {@code true} if shutdown was requested; otherwise {@code false}
      */
     public boolean doShutdown() {
@@ -71,7 +82,7 @@ public class LocalGridOptions {
 
     /**
      * Get the specified Grid collection working directory.
-     * 
+     *
      * @return Grid collection working directory (default: current directory)
      */
     public Path getWorkingDir() {
@@ -80,8 +91,8 @@ public class LocalGridOptions {
 
     /**
      * Get the specified Grid collection logs folder.
-     * 
-     * @return Gris collection logs folder; {@code null} if no logs folder was specified
+     *
+     * @return Grid collection logs folder; {@code null} if no logs folder was specified
      */
     public Path getLogsFolder() {
         return logsFolder;
@@ -89,7 +100,7 @@ public class LocalGridOptions {
 
     /**
      * Determine if console output redirection has been disabled.
-     * 
+     *
      * @return {@code true} if output redirection is disabled; otherwise {@code false}
      */
     public boolean noRedirect() {
@@ -105,8 +116,8 @@ public class LocalGridOptions {
 
     /**
      * Determine if output of {@code local-grid-hub} options information is specified.
-     * 
-     * @return {@code true} is information output is specified; otherwise {@code false}
+     *
+     * @return {@code true} if information output is specified; otherwise {@code false}
      */
     public boolean isHelp() {
         return help;
@@ -117,16 +128,21 @@ public class LocalGridOptions {
      */
     public void injectSettings() {
         String workingFolder = System.getProperty("user.dir");
-        
-        if ( ! plugins.isEmpty()) {
+
+        if (!plugins.isEmpty()) {
             System.setProperty(SeleniumSettings.GRID_PLUGINS.key(), String.join(File.pathSeparator, plugins));
         }
-        
         if (port != null) {
             System.setProperty(SeleniumSettings.HUB_PORT.key(), port.toString());
         }
-        if (gridServlets != null) {
-            System.setProperty(SeleniumSettings.GRID_SERVLETS.key(), gridServlets);
+        if (hubServlets != null) {
+            System.setProperty(SeleniumSettings.HUB_SERVLETS.key(), hubServlets);
+        }
+        if (nodeServlets != null) {
+            System.setProperty(SeleniumSettings.NODE_SERVLETS.key(), nodeServlets);
+        }
+        if (serveExampleSite != null) {
+            System.setProperty(SeleniumSettings.SERVE_EXAMPLE_SITE.key(), serveExampleSite.toString());
         }
         if (workingDir != null) {
             workingFolder = workingDir.toString();

@@ -90,6 +90,21 @@ public class LocalSeleniumGrid extends SeleniumGrid {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Extends the base implementation to also verify that all node servers
+     * in this collection are active.
+     */
+    @Override
+    public boolean isActive() {
+        if (!super.isActive()) return false;
+        for (IGridServer nodeServer : getNodeServers().values()) {
+            if (!nodeServer.isActive()) return false;
+        }
+        return true;
+    }
+    
+    /**
      * Wait until the indicated Grid collection is entirely ready.
      * 
      * @param hubServer Grid hub server
@@ -163,6 +178,8 @@ public class LocalSeleniumGrid extends SeleniumGrid {
 
         // if a hub URL is resolvable and already active — reconnect
         if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
+            // TODO: Verify API version of active hub matches current runtime version. This will
+            //       be implemented via GridApiProvider once that infrastructure is in place.
             seleniumGrid = new SeleniumGrid(config, resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
         // if hub URL or port was specified — launch at that port
