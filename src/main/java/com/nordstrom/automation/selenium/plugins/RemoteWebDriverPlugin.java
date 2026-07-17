@@ -15,6 +15,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.core.GridConfigFactoryImpl;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
@@ -55,7 +56,7 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
             Path outputPath) throws IOException {
         String[] combinedContexts = combineDependencyContexts(dependencyContexts, this);
         String capabilities = getCapabilities(config);
-        Path nodeConfigPath = config.createNodeConfig(capabilities, hubUrl);
+        Path nodeConfigPath = GridConfigFactoryImpl.INSTANCE.createNodeConfig(config, capabilities, hubUrl);
         String[] propertyNames = getPropertyNames(capabilities);
         return LocalSeleniumGrid.create(config, launcherClassName, combinedContexts,
                 false, -1, hubPort, getRegistrationStrategy(config),

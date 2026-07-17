@@ -167,7 +167,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
         Path workingPath = (workingDir == null || workingDir.isEmpty()) ? null : Paths.get(workingDir);
 
-        Path hubConfigPath = config.createHubConfig();
+        Path hubConfigPath = GridConfigFactoryImpl.INSTANCE.createHubConfig(config);
         String hostUrl = HostUtils.getLocalHost();
 
         // resolve hub URL from parameter, configured port, or null
