@@ -14,7 +14,7 @@ import com.beust.jcommander.ParameterException;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
-import com.nordstrom.automation.selenium.core.IGridServer;
+import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
@@ -80,15 +80,15 @@ public class Main {
         } else if (isActive) {
             parser.getConsole().println("Adding local nodes to grid at: " + hubUrl.toString());
             SeleniumGrid grid = SeleniumGrid.create(config, hubUrl);
-            IGridServer hubServer = grid.getHubServer();
-            List<IGridServer> nodeServers = new ArrayList<>();
+            GridServer hubServer = grid.getHubServer();
+            List<GridServer> nodeServers = new ArrayList<>();
 
             for (String pluginName : opts.getPlugins()) {
                 Object plugin = Class.forName(pluginName).getConstructor().newInstance();
                 nodeServers.add(ManagedDriverPlugin.class.cast(plugin).create(config, hubUrl));
             }
 
-            for (IGridServer nodeServer : nodeServers) {
+            for (GridServer nodeServer : nodeServers) {
                 nodeServer.start();
             }
 

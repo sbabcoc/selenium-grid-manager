@@ -51,17 +51,17 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * by {@link GridUtility#getDriver()} the first time a supported driver is requested.
      *
      * @param config {@link SeleniumConfig} object
-     * @param hubServer {@link IGridServer} object for hub host
-     * @param nodeServers array of {@link IGridServer} objects for node hosts
+     * @param hubServer {@link GridServer} object for hub host
+     * @param nodeServers array of {@link GridServer} objects for node hosts
      * @throws IOException if unable to acquire Grid details
      */
-    public LocalSeleniumGrid(SeleniumConfig config, IGridServer hubServer, IGridServer... nodeServers)
+    public LocalSeleniumGrid(SeleniumConfig config, GridServer hubServer, GridServer... nodeServers)
             throws IOException {
         
         this.hubServer = Objects.requireNonNull(hubServer, "[hubServer] must be non-null");
         if (nodeServers.length > 0) {
             LOGGER.debug("Assembling graph of pending grid at: {}", hubServer.getUrl());
-            for (IGridServer nodeServer : nodeServers) {
+            for (GridServer nodeServer : nodeServers) {
                 String nodeEndpoint = nodeServer.getUrl().getProtocol() + "://" + nodeServer.getUrl().getAuthority();
                 URL nodeUrl = URI.create(nodeEndpoint).toURL();
                 this.nodeServers.put(nodeUrl, nodeServer);
@@ -78,11 +78,11 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      */
     @Override
     public void activate() throws IOException, InterruptedException, TimeoutException {
-        IGridServer hubServer = getHubServer();
-        Collection<IGridServer> nodeServers = getNodeServers().values();
+        GridServer hubServer = getHubServer();
+        Collection<GridServer> nodeServers = getNodeServers().values();
         
         hubServer.start();
-        for (IGridServer nodeServer : nodeServers) {
+        for (GridServer nodeServer : nodeServers) {
             nodeServer.start();
         }
         
@@ -98,7 +98,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
     @Override
     public boolean isActive() {
         if (!super.isActive()) return false;
-        for (IGridServer nodeServer : getNodeServers().values()) {
+        for (GridServer nodeServer : getNodeServers().values()) {
             if (!nodeServer.isActive()) return false;
         }
         return true;
@@ -112,7 +112,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * @throws InterruptedException if this thread was interrupted
      * @throws TimeoutException if host timeout interval exceeded
      */
-    public static void awaitGridReady(IGridServer hubServer, Collection<IGridServer> nodeServers)
+    public static void awaitGridReady(GridServer hubServer, Collection<GridServer> nodeServers)
             throws TimeoutException, InterruptedException {
         
         SeleniumConfig config = SeleniumConfig.getConfig();
@@ -134,10 +134,10 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * @param nodeServers collection of Grid node servers
      * @return {@code true} if the entire Grid collection is ready; otherwise {@code false}
      */
-    static boolean isGridReady(SeleniumConfig config, IGridServer hubServer, Collection<IGridServer> nodeServers) {
+    static boolean isGridReady(SeleniumConfig config, GridServer hubServer, Collection<GridServer> nodeServers) {
         if (!GridServer.isHubActive(hubServer.getUrl())) return false;
-        for (IGridServer nodeServer : nodeServers) {
-            if (!GridServer.isNodeRegistered(config, hubServer.getUrl(), nodeServer.getUrl())) return false;
+        for (GridServer nodeServer : nodeServers) {
+            if (!GridServer.isNodeRegistered(hubServer.getUrl(), nodeServer.getUrl())) return false;
         }
         return true;
     }
@@ -159,7 +159,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         Objects.requireNonNull(config, "[config] must be non-null");
         SidecarManager.ensureRunning();
 
-        IGridServer hubServer = null;
+        GridServer hubServer = null;
         SeleniumGrid seleniumGrid = null;
 
         String launcherClassName = config.getString(SeleniumSettings.GRID_LAUNCHER.key());
@@ -180,7 +180,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
             // TODO: Verify API version of active hub matches current runtime version. This will
             //       be implemented via GridApiProvider once that infrastructure is in place.
-            seleniumGrid = new SeleniumGrid(config, resolvedHubUrl);
+            seleniumGrid = new SeleniumGrid(resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
         // if hub URL or port was specified — launch at that port
         } else if (resolvedHubUrl != null) {
@@ -201,7 +201,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         System.setProperty(SeleniumSettings.HUB_PORT.key(), Integer.toString(hubServer.getUrl().getPort()));
 
         final int hubPort = hubServer.getUrl().getPort();
-        List<IGridServer> nodeServers = new ArrayList<>();
+        List<GridServer> nodeServers = new ArrayList<>();
         
         // iterate over configured driver plugins
         for (ManagedDriverPlugin driverPlugin : LocalGridUtility.getLocalDriverPlugins(config)) {
@@ -221,7 +221,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // otherwise (local nodes added)
             } else {
                 try {
-                    for (IGridServer nodeServer : nodeServers) {
+                    for (GridServer nodeServer : nodeServers) {
                         nodeServer.start();
                     }
                     awaitGridReady(hubServer, nodeServers);
@@ -233,9 +233,9 @@ public class LocalSeleniumGrid extends SeleniumGrid {
                 }
             }
             
-            return new SeleniumGrid(config, hubUrl);
+            return new SeleniumGrid(hubUrl);
         } else {
-            return new LocalSeleniumGrid(config, hubServer, nodeServers.toArray(new IGridServer[0]));
+            return new LocalSeleniumGrid(config, hubServer, nodeServers.toArray(new GridServer[0]));
         }
     }
 

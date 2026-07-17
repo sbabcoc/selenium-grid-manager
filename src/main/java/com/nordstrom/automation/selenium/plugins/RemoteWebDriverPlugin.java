@@ -15,7 +15,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
-import com.nordstrom.automation.selenium.core.IGridServer;
+import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 
@@ -46,11 +46,11 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
      * @param hubUrl Grid hub {@link URL} with which node should register
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
      * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
-     * @return {@link IGridServer} object for specified node
+     * @return {@link GridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+    public GridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath,
             Path outputPath) throws IOException {
         String[] combinedContexts = combineDependencyContexts(dependencyContexts, this);
