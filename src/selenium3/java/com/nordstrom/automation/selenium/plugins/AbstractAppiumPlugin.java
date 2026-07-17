@@ -13,6 +13,7 @@ import org.openqa.selenium.net.PortProber;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.AppiumGridServer;
+import com.nordstrom.automation.selenium.core.GridConfigFactoryImpl;
 import com.nordstrom.automation.selenium.core.LocalGridServer;
 import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
@@ -71,7 +72,7 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         List<String> argsList = new ArrayList<>();
         
         // create node configuration for this plug-in
-        Path nodeConfigPath = config.createNodeConfig(getCapabilities(config), hubUrl);
+        Path nodeConfigPath = GridConfigFactoryImpl.INSTANCE.createNodeConfig(config, getCapabilities(config), hubUrl);
         
         // allow specification of multiple command line arguments
         String[] cliArgs = config.getStringArray(SeleniumSettings.APPIUM_CLI_ARGS.key());

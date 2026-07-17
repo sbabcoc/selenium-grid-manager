@@ -19,6 +19,7 @@ import org.openqa.selenium.json.Json;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.AppiumGridServer;
+import com.nordstrom.automation.selenium.core.GridConfigFactoryImpl;
 import com.nordstrom.automation.selenium.core.LocalGridServer;
 import com.nordstrom.automation.selenium.core.registration.PM2RegistrationStrategy;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
@@ -80,10 +81,10 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         List<String> argsList = new ArrayList<>();
         
         // create node configuration for this plug-in
-        Path nodeConfigPath = config.createNodeConfig(getCapabilities(config), hubUrl);
+        Path nodeConfigPath = GridConfigFactoryImpl.INSTANCE.createNodeConfig(config, getCapabilities(config), hubUrl);
         
         // get path to 'appium' configuration file
-        Path appiumConfigPath = config.getAppiumConfigPath();
+        Path appiumConfigPath = GridConfigFactoryImpl.INSTANCE.getAppiumConfigPath(config);
         // if file path is specified
         if (appiumConfigPath != null) {
             argsList.add("--config-file");
