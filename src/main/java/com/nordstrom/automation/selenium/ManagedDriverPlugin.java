@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
-import com.nordstrom.automation.selenium.core.IGridServer;
+import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalGridUtility;
 
 /**
@@ -49,10 +49,10 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      *
      * @param config {@link SeleniumConfig} object
      * @param hubUrl Grid hub {@link URL} with which node should register
-     * @return {@link IGridServer} object for specified node
+     * @return {@link GridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    default IGridServer create(SeleniumConfig config, URL hubUrl) throws IOException {
+    default GridServer create(SeleniumConfig config, URL hubUrl) throws IOException {
         String launcherClassName = config.getString(SeleniumSettings.GRID_LAUNCHER.key());
         String[] dependencyContexts = config.getDependencyContexts();
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
@@ -68,10 +68,10 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * @param dependencyContexts fully-qualified names of context classes for Selenium Grid dependencies
      * @param hubUrl Grid hub {@link URL} with which node should register
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
-     * @return {@link IGridServer} object for specified node
+     * @return {@link GridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    default IGridServer create(SeleniumConfig config, String launcherClassName,
+    default GridServer create(SeleniumConfig config, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath) throws IOException {
         return create(config, hubUrl.getPort(), launcherClassName, dependencyContexts, hubUrl, workingPath);
     }
@@ -85,13 +85,13 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * @param dependencyContexts fully-qualified names of context classes for Selenium Grid dependencies
      * @param hubUrl Grid hub {@link URL} with which node should register
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
-     * @return {@link IGridServer} object for specified node
+     * @return {@link GridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    default IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+    default GridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath) throws IOException {
         Path outputPath = LocalGridUtility.getOutputPath(config, false);
-        IGridServer nodeServer =
+        GridServer nodeServer =
                 create(config, hubPort, launcherClassName, dependencyContexts, hubUrl, workingPath, outputPath);
         nodeServer.getPersonalities().putAll(getPersonalities());
         return nodeServer;
@@ -107,10 +107,10 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      * @param hubUrl Grid hub {@link URL} with which node should register
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
      * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
-     * @return {@link IGridServer} object for specified node
+     * @return {@link GridServer} object for specified node
      * @throws IOException if an I/O error occurs
      */
-    IGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+    GridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath,
             Path outputPath) throws IOException;
 }

@@ -46,6 +46,17 @@ public class AppiumGridServer extends LocalGridServer {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Uses the {@code /status} endpoint since Appium does not support
+     * the standard {@code /wd/hub/status} endpoint.
+     */
+    @Override
+    public boolean isActive() {
+        return GridUtility.isHostActive(getUrl(), "/status");
+    }
+    
+    /**
      * Get stored relay node configuration path.
      * <br>
      * <b>NOTE</b>: A relay node is needed to connect the Appium server to a Selenium 4+ Grid hub.
