@@ -10,7 +10,7 @@ import java.util.List;
  * the Jetty-backed servlet container lifecycle management appropriate for the
  * current Selenium API version. Discovered and used by {@link SidecarManager}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public interface SidecarSupport {
 

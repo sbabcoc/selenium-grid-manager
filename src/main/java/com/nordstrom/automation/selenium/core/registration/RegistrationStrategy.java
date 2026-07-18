@@ -13,7 +13,7 @@ import com.nordstrom.automation.selenium.core.LocalGridServer;
  * Implementations are called only in the launching JVM and are never
  * on the sidecar classpath.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public interface RegistrationStrategy {
     /**

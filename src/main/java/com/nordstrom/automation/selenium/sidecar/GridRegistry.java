@@ -23,7 +23,7 @@ import com.nordstrom.automation.selenium.core.GridServer;
  * <p>
  * This class is a static singleton accessed by sidecar servlets via {@link #getInstance()}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridRegistry {
 

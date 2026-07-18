@@ -14,7 +14,7 @@ import com.nordstrom.common.file.PathUtils;
  * Utility for locating Node.js-ecosystem executables (npm, node, pm2, appium)
  * on the system PATH or at a configured location.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class NodeBinaryFinder {
 

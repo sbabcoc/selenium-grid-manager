@@ -19,7 +19,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
  * down all managed collections. Requires authorization via
  * {@link SidecarAuthStrategy}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/shutdown" })
 public class ShutdownServlet extends HttpServlet {

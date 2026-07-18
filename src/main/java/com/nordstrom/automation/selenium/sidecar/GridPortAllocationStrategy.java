@@ -9,7 +9,7 @@ package com.nordstrom.automation.selenium.sidecar;
  * and are activated by setting {@link com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings#GRID_PORT_ALLOCATOR}
  * in {@code settings.properties} or as a system property.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public interface GridPortAllocationStrategy {
 

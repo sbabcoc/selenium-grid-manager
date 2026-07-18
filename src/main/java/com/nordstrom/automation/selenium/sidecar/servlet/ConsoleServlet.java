@@ -28,7 +28,7 @@ import com.nordstrom.common.uri.UriUtils;
  * Displays managed and discovered grid instances, with controls for shutdown,
  * scanning, and stopping the sidecar.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/console" })
 public class ConsoleServlet extends HttpServlet {

@@ -18,7 +18,7 @@ import com.nordstrom.common.base.UncheckedThrow;
  * Serialization uses the {@code toJson()} / {@code fromJson(Map)} pattern supported by the
  * Selenium {@code Json} class, allowing instances to remain fully immutable.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridServerRegistration {
 

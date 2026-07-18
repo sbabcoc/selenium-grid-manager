@@ -8,7 +8,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarClient;
  * {@link RegistrationStrategy} for Selenium 4 hub servers.
  * Captures the hub PID and event bus ports at launch time.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class PidHubRegistrationStrategy implements RegistrationStrategy {
 

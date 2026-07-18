@@ -21,7 +21,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * <p>
  * If no stop token is configured, all requests are authorized unconditionally.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class TokenSessionAuthStrategy implements SidecarAuthStrategy {
 

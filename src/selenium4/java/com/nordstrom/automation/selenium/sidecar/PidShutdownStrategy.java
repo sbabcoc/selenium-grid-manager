@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * The appropriate strategy is selected automatically based on the {@link ShutdownMode} recorded
  * in the {@link GridServerRegistration} at launch time.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 class PidShutdownStrategy implements ShutdownStrategy {
 

@@ -27,7 +27,7 @@ import com.nordstrom.common.uri.UriUtils;
  * communication, consistent with
  * {@link com.nordstrom.automation.selenium.core.GridUtility}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class SidecarClient {
 

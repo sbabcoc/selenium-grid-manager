@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * For Selenium 4 bundles, the event bus publisher port is {@code hub - 2} and the subscriber
  * port is {@code hub - 1}, forming a tight cluster around the hub port.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class DefaultGridPortAllocationStrategy implements GridPortAllocationStrategy {
 

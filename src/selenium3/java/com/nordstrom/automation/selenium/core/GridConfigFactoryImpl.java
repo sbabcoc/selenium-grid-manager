@@ -35,7 +35,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * Creates hub and node configuration files using the Selenium 3
  * {@link GridHubConfiguration} and {@link GridNodeConfiguration} APIs.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridConfigFactoryImpl implements GridConfigFactory {
 

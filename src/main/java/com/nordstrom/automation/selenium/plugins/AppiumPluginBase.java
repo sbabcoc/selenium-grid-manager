@@ -30,7 +30,7 @@ import net.bytebuddy.implementation.Implementation;
  * This abstract class provides the version-agnostic base implementation for
  * drivers provided by {@code appium}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public abstract class AppiumPluginBase implements ManagedDriverPlugin {
 

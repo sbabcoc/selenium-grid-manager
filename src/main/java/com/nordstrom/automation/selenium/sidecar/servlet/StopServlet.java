@@ -20,7 +20,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
  * Shuts down all managed grid collections and then stops the sidecar JVM.
  * Requires authorization via {@link SidecarAuthStrategy}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/stop" })
 public class StopServlet extends HttpServlet {

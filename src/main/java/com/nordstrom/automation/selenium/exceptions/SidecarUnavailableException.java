@@ -5,7 +5,7 @@ import java.net.URL;
 /**
  * Thrown when the sidecar servlet container is unavailable or returns an unexpected response.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class SidecarUnavailableException extends RuntimeException {
 

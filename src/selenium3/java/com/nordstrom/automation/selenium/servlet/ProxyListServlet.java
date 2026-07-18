@@ -29,7 +29,7 @@ import org.openqa.selenium.json.Json;
  * [{"id": "http://10.0.0.31:8658"}, {"id": "http://10.0.0.31:35909"}]
  * </pre>
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class ProxyListServlet extends RegistryBasedServlet {
 

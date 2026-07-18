@@ -54,7 +54,7 @@ dependencies {
     api 'org.seleniumhq.selenium:selenium-support'
     api 'org.apache.httpcomponents:httpclient'
     api 'org.apache.commons:commons-lang3'
-    api 'com.beust:jcommander'
+    api 'org.jcommander:jcommander'
     api 'io.appium:java-client'
 
     // compile-time only: all browser drivers available for plugin compilation

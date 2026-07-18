@@ -11,7 +11,7 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 /**
  * Selenium 3 driver binary discovery, wrapping {@link WebDriverManager}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class DriverBinaryFinder {
 

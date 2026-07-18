@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
  * {@link com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings#SIDECAR_AUTH_STRATEGY}
  * in {@code settings.properties} or as a system property.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public interface SidecarAuthStrategy {
 

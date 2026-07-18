@@ -15,7 +15,7 @@ import com.nordstrom.automation.selenium.sidecar.GridRegistry;
  * Accepts POST requests with a {@code hubPort} parameter and removes the
  * corresponding grid collection from the {@link GridRegistry}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/deregister" })
 public class DeregistrationServlet extends HttpServlet {

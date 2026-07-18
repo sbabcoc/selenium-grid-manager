@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
  * one of them authenticates or authorizes the request. Custom implementations may
  * extend this class to build composite strategies.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class CompositeAuthStrategy implements SidecarAuthStrategy {
 

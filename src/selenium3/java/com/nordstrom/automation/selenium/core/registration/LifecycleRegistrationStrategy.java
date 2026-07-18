@@ -14,7 +14,7 @@ import com.nordstrom.common.base.UncheckedThrow;
  * {@link RegistrationStrategy} for Selenium 3 hub and node servers,
  * using the {@code LifecycleServlet} for shutdown.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class LifecycleRegistrationStrategy implements RegistrationStrategy {
 

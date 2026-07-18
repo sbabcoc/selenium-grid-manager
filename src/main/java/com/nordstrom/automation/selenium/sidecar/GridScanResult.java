@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Immutable data class representing the result of a grid instance scan.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridScanResult {
 

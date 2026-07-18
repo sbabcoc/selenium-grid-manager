@@ -21,7 +21,7 @@ import com.nordstrom.automation.selenium.sidecar.GridServerRegistration;
  * Accepts POST requests containing a JSON-serialized {@link GridServerRegistration}
  * and registers the server with the {@link GridRegistry}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/register" })
 public class RegistrationServlet extends HttpServlet {

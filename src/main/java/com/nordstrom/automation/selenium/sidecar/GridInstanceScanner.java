@@ -32,7 +32,7 @@ import com.nordstrom.automation.selenium.utility.HostUtils;
  * <p>
  * Ports occupied by managed grid collections are excluded from the scan.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridInstanceScanner {
 

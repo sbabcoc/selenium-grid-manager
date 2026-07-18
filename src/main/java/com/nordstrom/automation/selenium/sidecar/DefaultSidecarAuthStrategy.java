@@ -8,7 +8,7 @@ package com.nordstrom.automation.selenium.sidecar;
  * appropriate {@link com.nordstrom.automation.selenium.SeleniumConfig} subclass in
  * {@code selenium-foundation}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class DefaultSidecarAuthStrategy extends CompositeAuthStrategy {
 

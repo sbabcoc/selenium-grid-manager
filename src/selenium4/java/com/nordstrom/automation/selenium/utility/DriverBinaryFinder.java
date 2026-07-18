@@ -13,7 +13,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 /**
  * Selenium 4 driver binary discovery, wrapping {@link SeleniumManager}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class DriverBinaryFinder {
 

@@ -16,7 +16,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * The console is available at {@code http://localhost:9001/grid/control/console}
  * (or the configured {@link SeleniumSettings#SIDECAR_PORT}).
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class SidecarDashboard {
 

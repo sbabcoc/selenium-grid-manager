@@ -16,7 +16,7 @@ import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings
  * {@link SeleniumSettings#SIDECAR_STOP_TOKEN} to protect sensitive sidecar operations
  * in Selenium 3 environments.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class OsUserAuthStrategy implements SidecarAuthStrategy {
 

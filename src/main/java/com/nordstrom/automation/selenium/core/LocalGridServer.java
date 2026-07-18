@@ -17,7 +17,7 @@ import com.nordstrom.common.uri.UriUtils;
  * This class represents a single Selenium server (hub or node) belonging
  * to a local Grid collection.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class LocalGridServer extends GridServer {
 

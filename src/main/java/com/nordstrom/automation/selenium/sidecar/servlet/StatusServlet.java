@@ -22,7 +22,7 @@ import com.nordstrom.common.uri.UriUtils;
  * {@code true}, requests a fine-toothed scan from the
  * {@link com.nordstrom.automation.selenium.sidecar.GridInstanceScanner}.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 @WebServlet(urlPatterns = { "/grid/control/status" })
 public class StatusServlet extends HttpServlet {

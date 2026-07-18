@@ -7,7 +7,7 @@ package com.nordstrom.automation.selenium.sidecar;
  * {@link GridServerRegistration}. The sidecar selects the appropriate shutdown strategy
  * based on this value — no user configuration of shutdown behavior is provided or needed.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public enum ShutdownMode {
 

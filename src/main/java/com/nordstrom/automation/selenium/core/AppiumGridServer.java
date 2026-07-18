@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class represents a single Appium node server belonging to a local Grid collection.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class AppiumGridServer extends LocalGridServer {
 

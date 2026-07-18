@@ -8,7 +8,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarClient;
  * {@link RegistrationStrategy} for Selenium 4 standard nodes and relay nodes.
  * All are structurally identical non-hub PID registrations.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class PidNodeRegistrationStrategy implements RegistrationStrategy {
 

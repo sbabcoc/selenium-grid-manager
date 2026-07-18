@@ -22,13 +22,14 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * Default implementations are provided for path resolution methods since these
  * are version-agnostic.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public interface GridConfigFactory {
 
     /** suffix for node configuration modifier files */
     String NODE_MODS_SUFFIX = ".node.mods";
     
+    /** logger for GridConfigFactory implementations */
     Logger LOGGER = LoggerFactory.getLogger(GridConfigFactory.class);
 
     /**

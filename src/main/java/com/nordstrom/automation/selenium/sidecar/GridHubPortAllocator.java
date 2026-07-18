@@ -16,7 +16,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * {@link SeleniumSettings#GRID_PORT_ALLOCATOR}, whose default class name is registered
  * via {@code getDefaults()} in the appropriate {@link SeleniumConfig} subclass.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridHubPortAllocator {
 
@@ -88,7 +88,7 @@ public class GridHubPortAllocator {
     /**
      * Immutable value class holding an allocated Selenium 4 Grid port bundle.
      *
-     * @since [next-major]
+     * @since 36.0.0
      */
     public static class GridPorts {
 

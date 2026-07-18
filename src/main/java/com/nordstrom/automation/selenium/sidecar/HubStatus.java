@@ -15,7 +15,7 @@ import com.nordstrom.common.base.UncheckedThrow;
  * managed (launched and registered with this sidecar), discovered (found by background
  * scan), and monitored (future enhancement — explicitly registered remote instances).
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class HubStatus {
 
@@ -50,7 +50,7 @@ public class HubStatus {
      * @param subPort event bus subscriber port; {@code null} if not applicable
      * @return {@link HubStatus} for the managed hub, or {@code null} if the API version
      *         is not recognized
-     * @since [next-major]
+     * @since 36.0.0
      */
     public static HubStatus managed(URL hubUrl, int apiVersion, boolean active,
             Integer pubPort, Integer subPort) {
@@ -69,7 +69,7 @@ public class HubStatus {
      * @param apiVersion Selenium API version (3 or 4)
      * @return {@link HubStatus} for the discovered hub, or {@code null} if the API version
      *         is not recognized
-     * @since [next-major]
+     * @since 36.0.0
      */
     public static HubStatus discovered(URL hubUrl, int apiVersion) {
         if (apiVersion == 3 || apiVersion == 4) {

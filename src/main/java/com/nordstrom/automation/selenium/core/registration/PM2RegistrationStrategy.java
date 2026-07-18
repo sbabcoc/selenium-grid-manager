@@ -10,7 +10,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarClient;
  * at construction time — it is always known in the launching JVM and is never
  * probed.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class PM2RegistrationStrategy implements RegistrationStrategy {
 

@@ -11,7 +11,7 @@ import com.nordstrom.automation.selenium.examples.ServletContainer;
  * Selenium 4 implementation of {@link SidecarSupport}.
  * Uses standard Jetty ({@code org.eclipse.jetty}).
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class SidecarSupportImpl implements SidecarSupport {
 

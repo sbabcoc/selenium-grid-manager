@@ -37,7 +37,7 @@ import com.nordstrom.automation.selenium.utility.HostUtils;
  * Creates hub and node configuration files using JSON map manipulation
  * appropriate for the Selenium 4 TOML-compatible JSON configuration format.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class GridConfigFactoryImpl implements GridConfigFactory {
 

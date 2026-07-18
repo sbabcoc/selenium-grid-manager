@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * an {@code X-OS-User} header matching the OS user that owns the sidecar process.
  * This provides CLI-level authorization for tools running on the same machine as the sidecar.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class OsUserAuthStrategy implements SidecarAuthStrategy {
 

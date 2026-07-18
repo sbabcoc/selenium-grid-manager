@@ -33,7 +33,7 @@ import com.nordstrom.common.uri.UriUtils;
  * Multiple JVMs safely share a single sidecar — if the sidecar is already active when
  * {@link #ensureRunning()} is called, it returns without starting a new instance.
  *
- * @since [next-major]
+ * @since 36.0.0
  */
 public class SidecarManager {
 
