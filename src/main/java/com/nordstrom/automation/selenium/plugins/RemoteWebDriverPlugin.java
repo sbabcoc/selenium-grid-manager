@@ -111,9 +111,9 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
      * @return {@link RegistrationStrategy} for registering this node server with the sidecar
      */
     private RegistrationStrategy getRegistrationStrategy(final SeleniumConfig config) {
-        String className = (config.getVersion() == 3) ?
-            "com.nordstrom.automation.selenium.core.registration.LifecycleRegistrationStrategy" :
-            "com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy";
+        String className = config.isW3C() ?
+            "com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy" :
+            "com.nordstrom.automation.selenium.core.registration.LifecycleRegistrationStrategy";
         try {
             return (RegistrationStrategy) Class.forName(className).getDeclaredConstructor().newInstance();
         } catch (Exception e) {

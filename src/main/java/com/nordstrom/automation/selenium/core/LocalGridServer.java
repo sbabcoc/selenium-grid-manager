@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.common.base.UncheckedThrow;
@@ -134,7 +135,9 @@ public class LocalGridServer extends GridServer {
      */
     public static URL getServerUrl(String host, Integer port) {
         try {
-            return UriUtils.makeBasicURI("http", host, port, GridServer.HUB_BASE).toURL();
+            String[] pathAndParams = SeleniumConfig.getConfig().isW3C() ?
+                    new String[] {} : new String[] {"/wd/hub"};
+            return UriUtils.makeBasicURI("http", host, port, pathAndParams).toURL();
         } catch (MalformedURLException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }

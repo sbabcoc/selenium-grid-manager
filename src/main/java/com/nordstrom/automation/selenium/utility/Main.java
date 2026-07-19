@@ -15,9 +15,9 @@ import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.core.GridServer;
-import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
+import com.nordstrom.common.uri.UriUtils;
 
 /**
  * This class implements the command line interface for {@code selenium-grid-manager}.
@@ -67,8 +67,8 @@ public class Main {
         URL hubUrl = config.getHubUrl();
         if (hubUrl == null) {
             int hubPort = config.getInt(SeleniumSettings.HUB_PORT.key());
-            String hostStr = "http://" + HostUtils.getLocalHost() + ":" + hubPort + "/wd/hub";
-            hubUrl = new URL(hostStr);
+            String[] pathAndParams = config.isW3C() ? new String[] {} : new String[] {"/wd/hub"};
+            hubUrl = UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), hubPort, pathAndParams).toURL();
         }
         boolean isActive = GridServer.isHubActive(hubUrl);
         if (opts.doShutdown()) {

@@ -43,19 +43,9 @@ public class AppiumGridServer extends LocalGridServer {
             ProcessBuilder builder, Path workingPath, Path outputPath,
             RegistrationStrategy registrationStrategy) {
         super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy);
+        this.statusPath = "/status"; // status path is not version-specific
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Uses the {@code /status} endpoint since Appium does not support
-     * the standard {@code /wd/hub/status} endpoint.
-     */
-    @Override
-    public boolean isActive() {
-        return GridUtility.isHostActive(getUrl(), "/status");
-    }
-    
     /**
      * Get stored relay node configuration path.
      * <br>
