@@ -178,8 +178,8 @@ public class LocalSeleniumGrid extends SeleniumGrid {
 
         // if a hub URL is resolvable and already active — reconnect
         if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
-            // TODO: Verify API version of active hub matches current runtime version. This will
-            //       be implemented via GridApiProvider once that infrastructure is in place.
+            // verify API version matches current runtime
+            LocalGridUtility.verifyHubVersion(resolvedHubUrl);
             seleniumGrid = new SeleniumGrid(resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
         // if hub URL or port was specified — launch at that port

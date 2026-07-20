@@ -1,6 +1,7 @@
 package com.nordstrom.automation.selenium.core;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,8 @@ import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
+import com.nordstrom.automation.selenium.grid.GridApiProvider;
+import com.nordstrom.automation.selenium.grid.GridApiProviderRegistry;
 import com.nordstrom.common.file.PathUtils;
 
 /**
@@ -98,4 +101,25 @@ public final class LocalGridUtility {
     public static Integer getLocalGridPort(SeleniumConfig config, SeleniumSettings setting) {
         return Optional.ofNullable(config.getInteger(setting.key(), null)).orElse(PortProber.findFreePort());
     }
+    
+    /**
+     * Verify that the active hub at the specified URL matches the current runtime API version.
+     *
+     * @param hubUrl {@link URL} of the active hub
+     * @throws IllegalStateException if the hub version doesn't match or isn't recognized
+     */
+    public static void verifyHubVersion(URL hubUrl) {
+        GridApiProvider provider = GridApiProviderRegistry.forHub(hubUrl);
+        if (provider == null) {
+            throw new IllegalStateException("Active server at " + hubUrl + " is not a recognized "
+                    + "Selenium Grid hub — shut down the existing server and retry");
+        }
+        int currentVersion = SeleniumConfig.getConfig().getVersion();
+        if (provider.getApiVersion() != currentVersion) {
+            throw new IllegalStateException("Active hub at " + hubUrl + " is Selenium "
+                    + provider.getApiVersion() + " but current runtime is Selenium "
+                    + currentVersion + " — shut down the existing grid and retry");
+        }
+    }
+    
 }
