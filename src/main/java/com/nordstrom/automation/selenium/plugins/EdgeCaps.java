@@ -46,7 +46,7 @@ public class EdgeCaps {
             "{\"browserName\":\"MicrosoftEdge\"}";
     
     private static final String BASELINE = 
-            "{\"browserName\":\"MicrosoftEdge\",\"ms:edgeChromium\":true" +
+            "{\"browserName\":\"MicrosoftEdge\",\"ms:edgeChromium\":true," +
              "\"nord:options\":{\"personality\":\"MicrosoftEdge\"," +
                                "\"pluginClass\":\"com.nordstrom.automation.selenium.plugins.EdgePlugin\"}}";
     

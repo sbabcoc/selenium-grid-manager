@@ -95,11 +95,35 @@ public class GridRegistry {
     public void shutdown(int hubPort) {
         List<GridServerRegistration> servers;
         synchronized (this) {
-            servers = registrations.remove(hubPort);
+            servers = registrations.get(hubPort);
         }
         if (servers != null) {
             LOGGER.debug("Shutting down grid collection on port {}", hubPort);
-            sortForShutdown(servers).forEach(this::shutdownServer);
+            List<GridServerRegistration> remaining = new ArrayList<>();
+            boolean hadFailure = false;
+
+            for (GridServerRegistration registration : sortForShutdown(servers)) {
+                if (registration.isHub() && hadFailure) {
+                    LOGGER.warn("Skipping hub shutdown at {} for grid on port {} — "
+                            + "node/appium shutdown failure(s) occurred", registration.getServerUrl(), hubPort);
+                    remaining.add(registration);
+                    continue;
+                }
+                if (!shutdownServer(registration)) {
+                    hadFailure = true;
+                    remaining.add(registration);
+                }
+            }
+
+            synchronized (this) {
+                if (remaining.isEmpty()) {
+                    registrations.remove(hubPort);
+                } else {
+                    registrations.put(hubPort, remaining);
+                    LOGGER.warn("Grid collection on port {} retains {} server(s) still active/managed",
+                            hubPort, remaining.size());
+                }
+            }
         }
     }
 
@@ -172,15 +196,17 @@ public class GridRegistry {
      *
      * @param registration {@link GridServerRegistration} of the server to shut down
      */
-    private void shutdownServer(GridServerRegistration registration) {
+    private boolean shutdownServer(GridServerRegistration registration) {
         try {
             strategyFor(registration).shutdown(registration);
             LOGGER.debug("Shut down {} server at {} for grid on port {}",
                     registration.isHub() ? "hub" : "node/relay/appium",
                     registration.getServerUrl(), registration.getHubPort());
+            return true;
         } catch (Exception e) {
             LOGGER.warn("Failed shutting down server at {}: {}",
                     registration.getServerUrl(), e.getMessage());
+            return false;
         }
     }
 
