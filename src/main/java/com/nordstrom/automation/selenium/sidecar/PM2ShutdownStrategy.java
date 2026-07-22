@@ -1,5 +1,6 @@
 package com.nordstrom.automation.selenium.sidecar;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import com.nordstrom.common.file.PathUtils;
 class PM2ShutdownStrategy implements ShutdownStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PM2ShutdownStrategy.class);
+    private static final File DEV_NULL = new File(SystemUtils.IS_OS_WINDOWS ? "NUL" : "/dev/null");
 
     /**
      * Shut down the Appium server identified by the specified registration by deleting
@@ -65,6 +67,8 @@ class PM2ShutdownStrategy implements ShutdownStrategy {
         try {
             ProcessBuilder pb = new ProcessBuilder(buildArgs("describe", pm2Name));
             pb.environment().put("PATH", PathUtils.getSystemPath());
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(DEV_NULL);
             return pb.start().waitFor() == 0;
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -80,19 +84,25 @@ class PM2ShutdownStrategy implements ShutdownStrategy {
      * @return argument list for the PM2 command
      */
     private List<String> buildArgs(String command, String pm2Name) {
-        List<String> args = new ArrayList<>();
         String pm2Path = NodeBinaryFinder.findPM2Binary().getAbsolutePath();
+        List<String> argsList = new ArrayList<>();
 
         if (SystemUtils.IS_OS_WINDOWS) {
-            args.add("cmd.exe");
-            args.add("/c");
-            args.add("\"" + pm2Path + "\"");
+            argsList.add("\"" + pm2Path + "\"");
+            argsList.add(command);
+            argsList.add(pm2Name);
+            String fullCommand = String.join(" ", argsList);
+
+            argsList.clear();
+            argsList.add("cmd.exe");
+            argsList.add("/c");
+            argsList.add("\"" + fullCommand + "\"");
         } else {
-            args.add(pm2Path);
+            argsList.add(pm2Path);
+            argsList.add(command);
+            argsList.add(pm2Name);
         }
 
-        args.add(command);
-        args.add(pm2Name);
-        return args;
+        return argsList;
     }
 }
