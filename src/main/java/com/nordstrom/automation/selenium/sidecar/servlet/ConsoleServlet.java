@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.core.JsUtility;
 import com.nordstrom.automation.selenium.servlet.ExamplePagePathName;
 import com.nordstrom.automation.selenium.sidecar.DefaultSidecarAuthStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridInstanceScanner;
@@ -37,6 +39,14 @@ public class ConsoleServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final long SCAN_COMPLETE_DISPLAY_MS = 8000;
     private static final SidecarAuthStrategy AUTH = new DefaultSidecarAuthStrategy();
+
+    /** cached console page script */
+    private String consoleScript;
+
+    @Override
+    public void init() throws ServletException {
+        consoleScript = JsUtility.getScriptResource("console.js");
+    }
 
     /**
      * {@inheritDoc}
@@ -144,7 +154,9 @@ public class ConsoleServlet extends HttpServlet {
             out.println("Token: <input type='password' name='token'/> ");
         }
         out.println("<button type='submit'>Stop Sidecar</button></form>");
-        out.println("</div></body></html>");
+        out.println("</div>");
+        out.println("<script>" + consoleScript + "</script>");
+        out.println("</body></html>");
     }
 
     /**
