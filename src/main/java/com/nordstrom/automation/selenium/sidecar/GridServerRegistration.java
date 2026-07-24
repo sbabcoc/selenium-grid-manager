@@ -5,18 +5,22 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
+
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
- * Immutable data class representing the registration of a grid server with the sidecar registry.
+ * Immutable data class representing the registration of a grid server with the
+ * sidecar registry.
  * <p>
- * Instances are created via static factory methods and posted as JSON to the sidecar's
- * {@code /grid/control/register} endpoint by {@link SidecarClient}. The sidecar uses the
- * {@link ShutdownMode} to select the appropriate shutdown strategy when a grid collection
- * is shut down.
+ * Instances are created via static factory methods and posted as JSON to the
+ * sidecar's {@value SidecarPathName#REGISTER_PATH} endpoint by
+ * {@link SidecarClient}. The sidecar uses the {@link ShutdownMode} to select
+ * the appropriate shutdown strategy when a grid collection is shut down.
  * <p>
- * Serialization uses the {@code toJson()} / {@code fromJson(Map)} pattern supported by the
- * Selenium {@code Json} class, allowing instances to remain fully immutable.
+ * Serialization uses the {@code toJson()} / {@code fromJson(Map)} pattern
+ * supported by the Selenium {@code Json} class, allowing instances to remain
+ * fully immutable.
  *
  * @since 36.0.0
  */

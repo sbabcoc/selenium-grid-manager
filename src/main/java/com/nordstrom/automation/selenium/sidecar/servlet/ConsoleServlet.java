@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.servlet.ExamplePagePathName;
 import com.nordstrom.automation.selenium.sidecar.DefaultSidecarAuthStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridInstanceScanner;
 import com.nordstrom.automation.selenium.sidecar.GridRegistry;
@@ -30,7 +31,7 @@ import com.nordstrom.common.uri.UriUtils;
  *
  * @since 36.0.0
  */
-@WebServlet(urlPatterns = { "/grid/control/console" })
+@WebServlet(urlPatterns = { SidecarPathName.CONSOLE_PATH })
 public class ConsoleServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -44,7 +45,7 @@ public class ConsoleServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if ("true".equals(req.getParameter("fineToothed"))) {
             GridRegistry.getInstance().getScanner().requestFineToothed();
-            resp.sendRedirect("/grid/control/console");
+            resp.sendRedirect(SidecarPathName.CONSOLE_PATH);
             return;
         }
 
@@ -97,7 +98,7 @@ public class ConsoleServlet extends HttpServlet {
         if (SeleniumConfig.getConfig().getBoolean(SeleniumSettings.SERVE_EXAMPLE_SITE.key())) {
             int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
             String exampleUrl = UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port,
-                    "/grid/admin/ExamplePageServlet").toString();
+                    ExamplePagePathName.EXAMPLE_PAGE_PATH).toString();
             out.println("<p><strong>Example Site:</strong> <a href='" + exampleUrl
                     + "' target='_blank'>" + exampleUrl + "</a></p>");
         }
@@ -131,14 +132,14 @@ public class ConsoleServlet extends HttpServlet {
         }
 
         String dc = scanning ? " disabled" : "";
-        out.println("<a href='" + (scanning ? "#" : "/grid/control/console")
+        out.println("<a href='" + (scanning ? "#" : SidecarPathName.CONSOLE_PATH)
                 + "' class='scan-btn" + dc + "' "
                 + "title='Scan ports (stepped)'>Scan Now</a>");
-        out.println("<a href='" + (scanning ? "#" : "/grid/control/console?fineToothed=true")
+        out.println("<a href='" + (scanning ? "#" : SidecarPathName.CONSOLE_PATH + "?fineToothed=true")
                 + "' class='scan-btn fine" + dc + "' "
                 + "title='Scan all ports'>Scan All Ports &#x1F50D;</a>");
 
-        out.println("<form method='post' action='/grid/control/stop'>");
+        out.println("<form method='post' action='" + SidecarPathName.STOP_PATH + "' class='grid-action-form'>");
         if (requiresToken() && !authenticated) {
             out.println("Token: <input type='password' name='token'/> ");
         }
@@ -180,8 +181,8 @@ public class ConsoleServlet extends HttpServlet {
                     + "<td><a href='" + consoleUrl + "' target='_blank'>Open</a></td>");
 
             if (managed) {
-                out.println("<td><form method='post' action='/grid/control/shutdown'>"
-                        + "<input type='hidden' name='hubPort' value='"
+                out.println("<td><form method='post' action='" + SidecarPathName.SHUTDOWN_PATH
+                        + "' class='grid-action-form'><input type='hidden' name='hubPort' value='"
                         + s.getHubUrl().getPort() + "'/>");
                 if (requiresToken() && !authenticated) {
                     out.println("Token: <input type='password' name='token'/> ");

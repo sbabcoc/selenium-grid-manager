@@ -23,7 +23,7 @@ import com.nordstrom.automation.selenium.sidecar.GridServerRegistration;
  *
  * @since 36.0.0
  */
-@WebServlet(urlPatterns = { "/grid/control/register" })
+@WebServlet(urlPatterns = { SidecarPathName.REGISTER_PATH })
 public class RegistrationServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

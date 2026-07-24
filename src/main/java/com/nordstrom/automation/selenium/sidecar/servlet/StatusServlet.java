@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.servlet.ExamplePagePathName;
 import com.nordstrom.automation.selenium.sidecar.GridRegistry;
 import com.nordstrom.automation.selenium.sidecar.GridScanResult;
 import com.nordstrom.automation.selenium.utility.HostUtils;
@@ -24,7 +25,7 @@ import com.nordstrom.common.uri.UriUtils;
  *
  * @since 36.0.0
  */
-@WebServlet(urlPatterns = { "/grid/control/status" })
+@WebServlet(urlPatterns = { SidecarPathName.STATUS_PATH })
 public class StatusServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -42,7 +43,7 @@ public class StatusServlet extends HttpServlet {
         if (SeleniumConfig.getConfig().getBoolean(SeleniumSettings.SERVE_EXAMPLE_SITE.key())) {
             int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
             exampleSiteUrl = UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port,
-                    "/grid/admin/ExamplePageServlet").toString();
+                    ExamplePagePathName.EXAMPLE_PAGE_PATH).toString();
         }
 
         GridScanResult result = new GridScanResult(

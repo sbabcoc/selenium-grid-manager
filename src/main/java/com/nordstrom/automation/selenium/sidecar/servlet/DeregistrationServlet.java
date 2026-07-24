@@ -17,7 +17,7 @@ import com.nordstrom.automation.selenium.sidecar.GridRegistry;
  *
  * @since 36.0.0
  */
-@WebServlet(urlPatterns = { "/grid/control/deregister" })
+@WebServlet(urlPatterns = { SidecarPathName.DEREGISTER_PATH })
 public class DeregistrationServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
