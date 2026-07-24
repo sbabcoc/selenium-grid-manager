@@ -43,10 +43,6 @@ public class StopServlet extends HttpServlet {
         resp.setContentType("text/plain");
         resp.getWriter().println("Sidecar shutting down...");
         resp.flushBuffer();
-        LOGGER.info("Sidecar stop requested — shutting down");
-        new Thread(() -> {
-            try { Thread.sleep(500); } catch (InterruptedException ignored) {}
-            System.exit(0);
-        }, "sidecar-stop").start();
+        SidecarLifecycle.stopAfterDelay(LOGGER, "stop requested");
     }
 }

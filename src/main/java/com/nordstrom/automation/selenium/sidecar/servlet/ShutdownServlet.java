@@ -7,6 +7,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nordstrom.automation.selenium.sidecar.DefaultSidecarAuthStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridRegistry;
 import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
@@ -25,6 +28,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
 public class ShutdownServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownServlet.class);
     private static final SidecarAuthStrategy AUTH = new DefaultSidecarAuthStrategy();
 
     /**
@@ -36,12 +40,18 @@ public class ShutdownServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
+        GridRegistry registry = GridRegistry.getInstance();
         String hubPortParam = req.getParameter("hubPort");
         if (hubPortParam != null) {
-            GridRegistry.getInstance().shutdown(Integer.parseInt(hubPortParam));
+            registry.shutdown(Integer.parseInt(hubPortParam));
         } else {
-            GridRegistry.getInstance().shutdownAll();
+            registry.shutdownAll();
         }
         resp.setStatus(HttpServletResponse.SC_OK);
+
+        if (registry.getHubStatuses().isEmpty() && registry.getScanner().getDiscovered().isEmpty()) {
+            registry.getScanner().shutdown();
+            SidecarLifecycle.stopAfterDelay(LOGGER, "no managed or discovered grid instances remain");
+        }
     }
 }

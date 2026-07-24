@@ -1,9 +1,11 @@
 package com.nordstrom.automation.selenium.utility;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -17,12 +19,18 @@ import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
+import com.nordstrom.automation.selenium.sidecar.SidecarManager;
+import com.nordstrom.common.file.PathUtils;
 import com.nordstrom.common.uri.UriUtils;
 
 /**
  * This class implements the command line interface for {@code selenium-grid-manager}.
  */
 public class Main {
+
+    /** system property marking a re-invocation of this class as the detached grid/sidecar worker */
+    private static final String DETACHED_PROPERTY = "selenium.grid.detached";
 
     /**
      * This is the main entry point for the {@code selenium-grid-manager} command line interface. From here, you're
@@ -71,13 +79,16 @@ public class Main {
             hubUrl = UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), hubPort, pathAndParams).toURL();
         }
         boolean isActive = GridServer.isHubActive(hubUrl);
+
         if (opts.doShutdown()) {
             if (isActive) {
                 parser.getConsole().println("Shutting down active grid at: " + hubUrl.toString());
-                SeleniumGrid.create(config, hubUrl).shutdown();
+                SidecarClient.shutdown(hubUrl.getPort());
             }
             return;
-        } else if (isActive) {
+        }
+
+        if (isActive) {
             parser.getConsole().println("Adding local nodes to grid at: " + hubUrl.toString());
             SeleniumGrid grid = SeleniumGrid.create(config, hubUrl);
             GridServer hubServer = grid.getHubServer();
@@ -94,12 +105,72 @@ public class Main {
 
             LocalSeleniumGrid.awaitGridReady(hubServer, nodeServers);
             SeleniumGrid.create(config, hubUrl);
-        } else {
+            parser.getConsole().println(hubUrl.toString());
+            return;
+        }
+
+        if (Boolean.getBoolean(DETACHED_PROPERTY)) {
+            // this JVM is the detached worker — actually create and activate the grid,
+            // then block here (keeping the in-process sidecar alive) until explicitly stopped
             parser.getConsole().println("Creating new local grid at: " + hubUrl.toString());
             SeleniumGrid grid = LocalSeleniumGrid.create(config, hubUrl);
             hubUrl = grid.getHubServer().getUrl();
             grid.activate();
+            parser.getConsole().println(hubUrl.toString());
+            SidecarManager.awaitTermination();
+            return;
         }
+
+        // launcher process — fork a detached worker to host the grid + sidecar, then return
+        hubUrl = launchDetached(args, hubUrl);
         parser.getConsole().println(hubUrl.toString());
+    }
+
+    /**
+     * Fork a detached JVM that re-invokes {@link #main(String...)} as the grid/sidecar worker,
+     * then wait for the resulting grid hub to become active before returning.
+     *
+     * @param args original command line arguments
+     * @param hubUrl resolved hub {@link URL} the detached worker is expected to bind
+     * @return the same {@code hubUrl}, once confirmed active
+     * @throws IOException if the detached process fails to launch
+     * @throws InterruptedException if interrupted while waiting for the hub to become active
+     * @throws TimeoutException if the hub does not become active within the configured timeout
+     */
+    private static URL launchDetached(String[] args, URL hubUrl)
+            throws IOException, InterruptedException, TimeoutException {
+        List<String> command = new ArrayList<>();
+        command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+        command.add("-D" + DETACHED_PROPERTY + "=true");
+        command.add("-D" + SeleniumSettings.HUB_PORT.key() + "=" + hubUrl.getPort());
+        for (String name : System.getProperties().stringPropertyNames()) {
+            if (!name.equals(DETACHED_PROPERTY) && !name.equals(SeleniumSettings.HUB_PORT.key())) {
+                command.add("-D" + name + "=" + System.getProperty(name));
+            }
+        }
+        command.add("-cp");
+        command.add(System.getProperty("java.class.path"));
+        command.add(Main.class.getName());
+        command.addAll(Arrays.asList(args));
+
+        File logFile = File.createTempFile("selenium-grid-manager-", ".log");
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.redirectOutput(ProcessBuilder.Redirect.to(logFile));
+        pb.redirectErrorStream(true);
+        pb.environment().put("PATH", PathUtils.getSystemPath());
+        pb.start();
+        // intentionally not calling waitFor() — this process is meant to outlive the launcher
+
+        SeleniumConfig config = SeleniumConfig.getConfig();
+        long maxWait = config.getLong(SeleniumSettings.HOST_TIMEOUT.key()) * 1000;
+        long maxTime = System.currentTimeMillis() + maxWait;
+        while (!GridServer.isHubActive(hubUrl)) {
+            if (System.currentTimeMillis() > maxTime) {
+                throw new TimeoutException("Timed out waiting for detached grid process to become active; see "
+                        + logFile.getAbsolutePath());
+            }
+            Thread.sleep(100);
+        }
+        return hubUrl;
     }
 }
