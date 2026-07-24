@@ -21,7 +21,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
  *
  * @since 36.0.0
  */
-@WebServlet(urlPatterns = { "/grid/control/shutdown" })
+@WebServlet(urlPatterns = { SidecarPathName.SHUTDOWN_PATH })
 public class ShutdownServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.exceptions.SidecarUnavailableException;
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.uri.UriUtils;
 
@@ -44,7 +45,7 @@ public class SidecarClient {
      * @throws SidecarUnavailableException if the registration request fails
      */
     public static void register(GridServerRegistration registration) {
-        URL url = endpointUrl("/grid/control/register");
+        URL url = endpointUrl(SidecarPathName.REGISTER_PATH);
         String json = SeleniumConfig.getConfig().toJson(registration.toJson());
         postJson(url, json);
         LOGGER.debug("Registered {} server at {} with sidecar",
@@ -59,7 +60,7 @@ public class SidecarClient {
      * @throws SidecarUnavailableException if the shutdown request fails
      */
     public static void shutdown(int hubPort) {
-        URL url = endpointUrl("/grid/control/shutdown");
+        URL url = endpointUrl(SidecarPathName.SHUTDOWN_PATH);
         postForm(url, "hubPort=" + hubPort);
         LOGGER.debug("Requested sidecar shutdown of grid collection on port {}", hubPort);
     }
@@ -70,7 +71,7 @@ public class SidecarClient {
      * @throws SidecarUnavailableException if the stop request fails
      */
     public static void stop() {
-        URL url = endpointUrl("/grid/control/stop");
+        URL url = endpointUrl(SidecarPathName.STOP_PATH);
         postForm(url, "");
         LOGGER.debug("Requested sidecar stop");
     }

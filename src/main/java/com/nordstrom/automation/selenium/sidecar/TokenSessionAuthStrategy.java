@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
 
 /**
  * {@link SidecarAuthStrategy} implementation that authenticates via a session cookie
@@ -26,7 +27,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 public class TokenSessionAuthStrategy implements SidecarAuthStrategy {
 
     private static final String SESSION_COOKIE_NAME = "sidecar-session";
-    private static final String SESSION_COOKIE_PATH = "/grid/control";
+    private static final String SESSION_COOKIE_PATH = SidecarPathName.CONTROL_ROOT;
 
     private final Map<String, Long> activeSessions = new ConcurrentHashMap<>();
 

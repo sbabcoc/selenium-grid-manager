@@ -1,10 +1,12 @@
 package com.nordstrom.automation.selenium.sidecar;
 
+import java.net.URL;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
-import com.nordstrom.automation.selenium.SeleniumConfig;
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
 
 /**
  * Entry point for launching the sidecar as a standalone dashboard.
@@ -13,7 +15,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * <pre>
  *   ./gradlew runSidecar
  * </pre>
- * The console is available at {@code http://localhost:9001/grid/control/console}
+ * The console is available at {@code http://localhost:9001}{@value SidecarPathName#CONSOLE_PATH}
  * (or the configured {@link SeleniumSettings#SIDECAR_PORT}).
  *
  * @since 36.0.0
@@ -34,10 +36,8 @@ public class SidecarDashboard {
     public static void main(String[] args) {
         LOGGER.info("Starting Selenium Grid Manager sidecar dashboard");
         try {
-            SidecarManager.ensureRunning();
-            int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
-            LOGGER.info("Sidecar dashboard running — console at " +
-                    "http://localhost:{}/grid/control/console", port);
+            URL sidecarUrl = SidecarManager.ensureRunning();
+            LOGGER.info("Sidecar dashboard running — console at {}{}", sidecarUrl, SidecarPathName.CONSOLE_PATH);
             SidecarManager.awaitTermination();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -5,15 +5,18 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
+
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
  * Immutable data class representing the status of a Selenium Grid hub instance.
  * <p>
- * Instances are returned by the sidecar's {@code /grid/control/status} endpoint
- * as part of a {@link GridScanResult}. Three categories of hub are represented:
- * managed (launched and registered with this sidecar), discovered (found by background
- * scan), and monitored (future enhancement — explicitly registered remote instances).
+ * Instances are returned by the sidecar's {@value SidecarPathName#STATUS_PATH}
+ * endpoint as part of a {@link GridScanResult}. Three categories of hub are
+ * represented: managed (launched and registered with this sidecar), discovered
+ * (found by background scan), and monitored (future enhancement — explicitly
+ * registered remote instances).
  *
  * @since 36.0.0
  */

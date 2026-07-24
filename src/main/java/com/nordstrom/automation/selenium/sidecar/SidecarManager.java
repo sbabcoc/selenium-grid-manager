@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.GridUtility;
+import com.nordstrom.automation.selenium.servlet.ExamplePagePathName;
+import com.nordstrom.automation.selenium.sidecar.servlet.SidecarPathName;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.uri.UriUtils;
@@ -57,15 +59,22 @@ public class SidecarManager {
      * If the sidecar is already active (either in this JVM or another), this method
      * returns without starting a new instance. Otherwise, starts the sidecar on the
      * port specified by {@link SeleniumSettings#SIDECAR_PORT}.
+     *
+     * @return base {@link URL} of the active sidecar servlet container
      */
-    public static synchronized void ensureRunning() {
+    public static synchronized URL ensureRunning() {
+        URL sidecarUrl;
+        try {
+            sidecarUrl = getSidecarUrl();
+        } catch (MalformedURLException e) {
+            throw UncheckedThrow.throwUnchecked(e);
+        }
+
         if (isActive()) {
             LOGGER.debug("Sidecar already active — skipping launch");
             try {
-                int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
-                URL sidecarUrl = UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port).toURL();
                 String json = EntityUtils.toString(
-                        GridUtility.getHttpResponse(sidecarUrl, "/grid/control/status").getEntity(),
+                        GridUtility.getHttpResponse(sidecarUrl, SidecarPathName.STATUS_PATH).getEntity(),
                         StandardCharsets.UTF_8);
                 Map<String, Object> status = SeleniumConfig.getConfig().fromJson(json, Json.MAP_TYPE);
                 boolean exampleSiteActive = status.get("exampleSiteUrl") != null;
@@ -79,7 +88,7 @@ public class SidecarManager {
             } catch (Exception e) {
                 LOGGER.debug("Unable to verify example site status from active sidecar", e);
             }
-            return;
+            return sidecarUrl;
         }
 
         int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
@@ -87,12 +96,13 @@ public class SidecarManager {
 
         List<String> servlets = new ArrayList<>(SIDECAR_SERVLETS);
         if (SeleniumConfig.getConfig().getBoolean(SeleniumSettings.SERVE_EXAMPLE_SITE.key())) {
-            servlets.add("com.nordstrom.automation.selenium.servlet.ExamplePageServlet");
-            servlets.add("com.nordstrom.automation.selenium.servlet.ExamplePageServlet$FrameA_Servlet");
-            servlets.add("com.nordstrom.automation.selenium.servlet.ExamplePageServlet$FrameB_Servlet");
-            servlets.add("com.nordstrom.automation.selenium.servlet.ExamplePageServlet$FrameC_Servlet");
-            servlets.add("com.nordstrom.automation.selenium.servlet.ExamplePageServlet$FrameD_Servlet");
-            LOGGER.debug("Example page site added to sidecar at /grid/admin/ExamplePageServlet");
+            String examplePageClass = "com.nordstrom.automation.selenium.servlet.ExamplePageServlet";
+            servlets.add(examplePageClass);
+            servlets.add(examplePageClass + "$FrameA_Servlet");
+            servlets.add(examplePageClass + "$FrameB_Servlet");
+            servlets.add(examplePageClass + "$FrameC_Servlet");
+            servlets.add(examplePageClass + "$FrameD_Servlet");
+            LOGGER.debug("Example page site added to sidecar at {}", ExamplePagePathName.EXAMPLE_PAGE_PATH);
         }
 
         SidecarSupport support = getSupport();
@@ -102,18 +112,20 @@ public class SidecarManager {
                 LOGGER.info("JVM shutting down — shutting down all managed grid collections");
                 GridRegistry.getInstance().shutdownAll();
             }, "sidecar-shutdown-hook"));
-            LOGGER.info("Sidecar started on port {} — console at " +
-                    "http://{}:{}/grid/control/console", port, HostUtils.getLocalHost(), port);
+            LOGGER.info("Sidecar started on port {} — console at {}{}",
+                    port, sidecarUrl, SidecarPathName.CONSOLE_PATH);
         } catch (IOException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
+
+        return sidecarUrl;
     }
 
     /**
      * Await termination of the sidecar servlet container.
      * <p>
      * Blocks the calling thread until the sidecar is stopped via
-     * {@code /grid/control/stop} or the JVM exits.
+     * {@value SidecarPathName#STOP_PATH} or the JVM exits.
      *
      * @throws InterruptedException if interrupted while waiting
      */
@@ -134,13 +146,21 @@ public class SidecarManager {
         if (getSupport().isActive()) return true;
         // check HTTP health endpoint for cross-JVM detection
         try {
-            int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
-            return GridUtility.isHostActive(
-                    UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port,
-                            "/grid/control/status").toURL());
+            return GridUtility.isHostActive(getSidecarUrl(), SidecarPathName.STATUS_PATH);
         } catch (MalformedURLException e) {
             return false;
         }
+    }
+
+    /**
+     * Get the base URL of the sidecar servlet container.
+     *
+     * @return sidecar base {@link URL}
+     * @throws MalformedURLException if the constructed URL is malformed
+     */
+    private static URL getSidecarUrl() throws MalformedURLException {
+        int port = SeleniumConfig.getConfig().getInt(SeleniumSettings.SIDECAR_PORT.key());
+        return UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port).toURL();
     }
 
     /**
