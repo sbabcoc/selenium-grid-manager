@@ -22,6 +22,7 @@ import com.nordstrom.automation.selenium.core.registration.PidHubRegistrationStr
 import com.nordstrom.automation.selenium.core.registration.PidNodeRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridHubPortAllocator;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.automation.selenium.sidecar.SidecarManager;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
@@ -185,6 +186,16 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
             // verify API version matches current runtime
             LocalGridUtility.verifyHubVersion(resolvedHubUrl);
+            // if monitoring unmanaged hubs
+            if (config.getBoolean(SeleniumSettings.MONITOR_UNMANAGED_HUBS.key())) {
+                // determine API version of unmanaged hub
+                int apiVersion = GridUtility.probeApiVersion(resolvedHubUrl);
+                // if known version
+                if (apiVersion > 0) {
+                    SidecarManager.ensureRunning();
+                    SidecarClient.monitor(resolvedHubUrl, apiVersion);
+                }
+            }
             seleniumGrid = new SeleniumGrid(resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
         // otherwise — launch new hub

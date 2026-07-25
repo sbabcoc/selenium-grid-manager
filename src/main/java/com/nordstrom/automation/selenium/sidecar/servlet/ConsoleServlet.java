@@ -2,6 +2,7 @@ package com.nordstrom.automation.selenium.sidecar.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -21,6 +22,8 @@ import com.nordstrom.automation.selenium.sidecar.DefaultSidecarAuthStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridInstanceScanner;
 import com.nordstrom.automation.selenium.sidecar.GridRegistry;
 import com.nordstrom.automation.selenium.sidecar.HubStatus;
+import com.nordstrom.automation.selenium.sidecar.MonitoredGrid;
+import com.nordstrom.automation.selenium.sidecar.MonitoredGridRegistry;
 import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.uri.UriUtils;
@@ -103,6 +106,14 @@ public class ConsoleServlet extends HttpServlet {
         } else {
             renderGridTable(out, managed, true, authenticated);
         }
+
+        List<MonitoredGrid> monitoredGrids = MonitoredGridRegistry.getInstance().getAll();
+        out.println("<h2>Monitored Grids</h2>");
+        if (monitoredGrids.isEmpty()) {
+            out.println("<p>No monitored grids.</p>");
+        } else {
+            renderMonitoredTable(out, monitoredGrids, authenticated);
+        }
         
         // show example site link if active
         if (SeleniumConfig.getConfig().getBoolean(SeleniumSettings.SERVE_EXAMPLE_SITE.key())) {
@@ -175,14 +186,7 @@ public class ConsoleServlet extends HttpServlet {
         out.println("</tr>");
 
         for (HubStatus s : statuses) {
-            String consoleUrl;
-            try {
-                consoleUrl = s.getApiVersion() == 4
-                        ? UriUtils.uriForPath(s.getHubUrl(), "/ui/").toString()
-                        : UriUtils.uriForPath(s.getHubUrl(), "/grid/console").toString();
-            } catch (Exception e) {
-                consoleUrl = s.getHubUrl().toString();
-            }
+            String consoleUrl = resolveConsoleUrl(s.getHubUrl(), s.getApiVersion());
             out.println("<tr>"
                     + "<td>" + s.getHubUrl() + "</td>"
                     + "<td>Selenium " + s.getApiVersion() + "</td>"
@@ -194,7 +198,8 @@ public class ConsoleServlet extends HttpServlet {
 
             if (managed) {
                 out.println("<td><form method='post' action='" + SidecarPathName.SHUTDOWN_PATH
-                        + "' class='grid-action-form'><input type='hidden' name='hubPort' value='"
+                        + "' class='grid-action-form'>"
+                        + "<input type='hidden' name='hubPort' value='"
                         + s.getHubUrl().getPort() + "'/>");
                 if (requiresToken() && !authenticated) {
                     out.println("Token: <input type='password' name='token'/> ");
@@ -204,6 +209,42 @@ public class ConsoleServlet extends HttpServlet {
             out.println("</tr>");
         }
         out.println("</table>");
+    }
+
+    private void renderMonitoredTable(PrintWriter out, List<MonitoredGrid> grids, boolean authenticated) {
+        out.println("<table><tr><th>Hub URL</th><th>API</th><th>Console</th><th>Action</th></tr>");
+        for (MonitoredGrid g : grids) {
+            String consoleUrl = resolveConsoleUrl(g.getHubUrl(), g.getApiVersion());
+            out.println("<tr>"
+                    + "<td>" + g.getHubUrl() + "</td>"
+                    + "<td>Selenium " + g.getApiVersion() + "</td>"
+                    + "<td><a href='" + consoleUrl + "' target='_blank'>Open</a></td>"
+                    + "<td><form method='post' action='" + SidecarPathName.UNMONITOR_PATH + "' class='grid-action-form'>"
+                    + "<input type='hidden' name='hubUrl' value='" + g.getHubUrl() + "'/>");
+            if (requiresToken() && !authenticated) {
+                out.println("Token: <input type='password' name='token'/> ");
+            }
+            out.println("<button type='submit'>Remove</button></form></td>"
+                    + "</tr>");
+        }
+        out.println("</table>");
+    }
+
+    /**
+     * Resolve the console URL for the specified hub, based on its Selenium API version.
+     *
+     * @param hubUrl {@link URL} of the hub
+     * @param apiVersion Selenium API version (3 or 4)
+     * @return resolved console {@link URL} as a string; falls back to the hub URL itself on failure
+     */
+    private static String resolveConsoleUrl(URL hubUrl, int apiVersion) {
+        try {
+            return apiVersion == 4
+                    ? UriUtils.uriForPath(hubUrl, "/ui/").toString()
+                    : UriUtils.uriForPath(hubUrl, "/grid/console").toString();
+        } catch (Exception e) {
+            return hubUrl.toString();
+        }
     }
 
     /**

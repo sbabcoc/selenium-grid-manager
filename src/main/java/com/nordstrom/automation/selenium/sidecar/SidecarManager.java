@@ -47,6 +47,8 @@ public class SidecarManager {
             "com.nordstrom.automation.selenium.sidecar.servlet.ShutdownServlet",
             "com.nordstrom.automation.selenium.sidecar.servlet.StopServlet",
             "com.nordstrom.automation.selenium.sidecar.servlet.StatusServlet",
+            "com.nordstrom.automation.selenium.sidecar.servlet.MonitorServlet",
+            "com.nordstrom.automation.selenium.sidecar.servlet.UnmonitorServlet",
             "com.nordstrom.automation.selenium.sidecar.servlet.ConsoleServlet");
 
     private SidecarManager() {

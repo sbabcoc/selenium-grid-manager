@@ -40,7 +40,7 @@ public class GridRegistry {
      * Private constructor — use {@link #getInstance()}.
      */
     private GridRegistry() {
-        this.scanner = new GridInstanceScanner(registrations.keySet());
+        this.scanner = new GridInstanceScanner(registrations.keySet(), MonitoredGridRegistry.getInstance());
     }
 
     /**

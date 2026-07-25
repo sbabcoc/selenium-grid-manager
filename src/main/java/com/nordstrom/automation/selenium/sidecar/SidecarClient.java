@@ -77,6 +77,49 @@ public class SidecarClient {
     }
 
     /**
+     * Add the specified hub to the sidecar's monitored list.
+     *
+     * @param hubUrl {@link URL} of the hub to monitor
+     * @param apiVersion Selenium API version (3 or 4)
+     * @throws SidecarUnavailableException if the request fails
+     *
+     * @since [next-major]
+     */
+    public static void monitor(URL hubUrl, int apiVersion) {
+        URL url = endpointUrl(SidecarPathName.MONITOR_PATH);
+        postForm(url, "hubUrl=" + encode(hubUrl.toString()) + "&apiVersion=" + apiVersion);
+        LOGGER.debug("Added monitored grid at {} with sidecar", hubUrl);
+    }
+
+    /**
+     * Remove the specified hub from the sidecar's monitored list.
+     *
+     * @param hubUrl {@link URL} of the hub to stop monitoring
+     * @throws SidecarUnavailableException if the request fails
+     *
+     * @since [next-major]
+     */
+    public static void unmonitor(URL hubUrl) {
+        URL url = endpointUrl(SidecarPathName.UNMONITOR_PATH);
+        postForm(url, "hubUrl=" + encode(hubUrl.toString()));
+        LOGGER.debug("Removed monitored grid at {} from sidecar", hubUrl);
+    }
+
+    /**
+     * URL-encode the specified value for use in a form body.
+     *
+     * @param value value to encode
+     * @return encoded value
+     */
+    private static String encode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // UTF-8 is always supported
+        }
+    }
+
+    /**
      * Build the URL for the specified sidecar endpoint path.
      *
      * @param path endpoint path
