@@ -25,4 +25,10 @@ public interface SidecarPathName {
 
     /** path: sidecar management console */
     String CONSOLE_PATH = "/grid/control/console";
+    
+    /** path: monitored grid registration */
+    String MONITOR_PATH = "/grid/control/monitor";
+
+    /** path: monitored grid removal */
+    String UNMONITOR_PATH = "/grid/control/unmonitor";
 }

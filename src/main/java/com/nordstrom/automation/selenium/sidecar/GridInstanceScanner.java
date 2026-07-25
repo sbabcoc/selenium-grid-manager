@@ -39,6 +39,7 @@ public class GridInstanceScanner {
     private static final Logger LOGGER = LoggerFactory.getLogger(GridInstanceScanner.class);
 
     private final Set<Integer> managedPorts;
+    private final MonitoredGridRegistry monitoredRegistry;
     private final int scanStart;
     private final int scanEnd;
     private final int scanStep;
@@ -67,9 +68,12 @@ public class GridInstanceScanner {
      *
      * @param managedPorts set of hub ports currently managed by this sidecar;
      *        these ports are excluded from the scan
+     * @param monitoredRegistry registry of monitored grid hubs; monitored hosts
+     *        are excluded from discovery results
      */
-    public GridInstanceScanner(Set<Integer> managedPorts) {
+    public GridInstanceScanner(Set<Integer> managedPorts, MonitoredGridRegistry monitoredRegistry) {
         this.managedPorts = managedPorts;
+        this.monitoredRegistry = monitoredRegistry;
 
         SeleniumConfig config = SeleniumConfig.getConfig();
         this.scanStart = config.getInt(SeleniumSettings.SIDECAR_SCAN_START.key());
@@ -155,15 +159,13 @@ public class GridInstanceScanner {
         LOGGER.debug("Scan chunk starting at port {} (step={}, fineToothed={})", port, step, isFineToothed);
 
         while (port <= scanEnd && System.currentTimeMillis() < chunkEnd) {
-            if (!managedPorts.contains(port)) {
-                URL candidate = buildHubUrl(port);
-                if (candidate != null) {
-                    int apiVersion = probeApiVersion(candidate);
-                    HubStatus status = HubStatus.discovered(candidate, apiVersion);
-                    if (status != null && !previousUrls.contains(candidate)) {
-                        found.add(status);
-                        LOGGER.debug("Discovered unmanaged Selenium {} Grid at: {}", apiVersion, candidate);
-                    }
+            URL candidate = buildHubUrl(port);
+            if (candidate != null && !managedPorts.contains(port) && !monitoredRegistry.isMonitored(candidate)) {
+                int apiVersion = GridUtility.probeApiVersion(candidate);
+                HubStatus status = HubStatus.discovered(candidate, apiVersion);
+                if (status != null && !previousUrls.contains(candidate)) {
+                    found.add(status);
+                    LOGGER.debug("Discovered unmanaged Selenium {} Grid at: {}", apiVersion, candidate);
                 }
             }
             port += step;
@@ -218,20 +220,5 @@ public class GridInstanceScanner {
         } catch (MalformedURLException e) {
             return null;
         }
-    }
-
-    /**
-     * Probe the API version of a confirmed-active server of unknown provenance.
-     * Probing is appropriate here because the server was not launched by this JVM.
-     * For servers we launch ourselves, the API version is always passed explicitly.
-     *
-     * @param hubUrl {@link URL} of the hub to probe
-     * @return 4 if the server is a Selenium 4 hub; 3 if it is a Selenium 3 hub;
-     *         -1 if the server is not a recognized Selenium Grid hub
-     */
-    private static int probeApiVersion(URL hubUrl) {
-        if (GridUtility.isSelenium4Hub(hubUrl)) return 4;
-        if (GridUtility.isSelenium3Hub(hubUrl)) return 3;
-        return -1;
     }
 }
