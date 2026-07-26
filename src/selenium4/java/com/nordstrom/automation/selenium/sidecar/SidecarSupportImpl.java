@@ -51,4 +51,14 @@ public class SidecarSupportImpl implements SidecarSupport {
     public boolean isActive() {
         return sidecarServer != null && sidecarServer.isRunning();
     }
+
+    @Override
+    public String[] getDependencyContexts() {
+        return new String[] {
+            "org.eclipse.jetty.server.Server",
+            "org.eclipse.jetty.servlet.ServletContextHandler",
+            "org.eclipse.jetty.security.SecurityHandler",
+            "org.eclipse.jetty.io.ByteBufferPool"
+        };
+    }
 }

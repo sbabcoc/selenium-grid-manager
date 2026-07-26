@@ -100,3 +100,4 @@ failsafe-reports/
 
 .env
 .env.*
+monitored-grids.json
