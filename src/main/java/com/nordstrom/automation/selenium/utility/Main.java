@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
@@ -16,12 +17,16 @@ import com.beust.jcommander.ParameterException;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
+import com.nordstrom.automation.selenium.DriverPlugin;
 import com.nordstrom.automation.selenium.core.GridServer;
+import com.nordstrom.automation.selenium.core.GridUtility;
 import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 import com.nordstrom.automation.selenium.core.SeleniumGrid;
 import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.automation.selenium.sidecar.SidecarManager;
+import com.nordstrom.automation.selenium.sidecar.SidecarSupport;
 import com.nordstrom.common.file.PathUtils;
+import com.nordstrom.common.jar.JarUtils;
 import com.nordstrom.common.uri.UriUtils;
 
 /**
@@ -31,6 +36,23 @@ public class Main {
 
     /** system property marking a re-invocation of this class as the detached grid/sidecar worker */
     private static final String DETACHED_PROPERTY = "selenium.grid.detached";
+
+    private static final String[] FORWARDED_PROPERTY_PREFIXES = {
+        "selenium.", "appium.", "node.", "npm.", "pm2."
+    };
+
+    /** representative classes for core Selenium-Foundation framework dependencies not
+     *  covered by SeleniumConfig.getDependencyContexts() or any plugin's own contexts */
+    private static final String[] CORE_CONTEXTS = {
+        "org.apache.commons.configuration2.ex.ConfigurationException",
+        "com.nordstrom.automation.selenium.exceptions.SeleniumFoundationException",
+        "com.nordstrom.automation.settings.SettingsCore",
+        "org.apache.commons.logging.Log",
+        "org.apache.commons.text.lookup.StringLookupFactory",
+        "org.apache.commons.beanutils.BeanIntrospector",
+        "org.apache.http.client.methods.HttpUriRequest",
+        "org.apache.http.HttpRequest"
+    };
 
     /**
      * This is the main entry point for the {@code selenium-grid-manager} command line interface. From here, you're
@@ -129,6 +151,12 @@ public class Main {
     /**
      * Fork a detached JVM that re-invokes {@link #main(String...)} as the grid/sidecar worker,
      * then wait for the resulting grid hub to become active before returning.
+     * <p>
+     * The detached JVM's classpath is assembled from the dependency contexts common to all
+     * plugins ({@link SeleniumConfig#getDependencyContexts()}) plus every {@link ManagedDriverPlugin}
+     * registered via {@link ServiceLoader}, regardless of which plugin(s) this invocation
+     * selected — since the detached JVM outlives this invocation and may be asked to spawn
+     * any supported plugin's node later.
      *
      * @param args original command line arguments
      * @param hubUrl resolved hub {@link URL} the detached worker is expected to bind
@@ -139,17 +167,45 @@ public class Main {
      */
     private static URL launchDetached(String[] args, URL hubUrl)
             throws IOException, InterruptedException, TimeoutException {
+        SeleniumConfig config = SeleniumConfig.getConfig();
+
+        List<String> allContexts = new ArrayList<>(Arrays.asList(config.getDependencyContexts()));
+        allContexts.addAll(Arrays.asList(CORE_CONTEXTS));
+
+        SidecarSupport support = ServiceLoader.load(SidecarSupport.class).iterator().next();
+        allContexts.addAll(Arrays.asList(support.getDependencyContexts()));
+
+        for (DriverPlugin plugin : GridUtility.getDriverPlugins(config)) {
+            if (plugin instanceof ManagedDriverPlugin) {
+                allContexts.addAll(Arrays.asList(((ManagedDriverPlugin) plugin).getDependencyContexts()));
+            }
+        }
+
+        String assembled = JarUtils.getClasspath(allContexts.toArray(new String[0]));
+        String[] parts = assembled.split("\n", 2);
+        String classPath = parts[0];
+        String[] agentSpecs = (parts.length > 1) ? parts[1].split("\t") : new String[0];
+
         List<String> command = new ArrayList<>();
         command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
         command.add("-D" + DETACHED_PROPERTY + "=true");
         command.add("-D" + SeleniumSettings.HUB_PORT.key() + "=" + hubUrl.getPort());
         for (String name : System.getProperties().stringPropertyNames()) {
-            if (!name.equals(DETACHED_PROPERTY) && !name.equals(SeleniumSettings.HUB_PORT.key())) {
-                command.add("-D" + name + "=" + System.getProperty(name));
+            if (name.equals(DETACHED_PROPERTY) || name.equals(SeleniumSettings.HUB_PORT.key())) {
+                continue;
+            }
+            for (String prefix : FORWARDED_PROPERTY_PREFIXES) {
+                if (name.startsWith(prefix)) {
+                    command.add("-D" + name + "=" + System.getProperty(name));
+                    break;
+                }
             }
         }
+        for (String agentSpec : agentSpecs) {
+            command.add(agentSpec);
+        }
         command.add("-cp");
-        command.add(System.getProperty("java.class.path"));
+        command.add(classPath);
         command.add(Main.class.getName());
         command.addAll(Arrays.asList(args));
 
@@ -159,9 +215,7 @@ public class Main {
         pb.redirectErrorStream(true);
         pb.environment().put("PATH", PathUtils.getSystemPath());
         pb.start();
-        // intentionally not calling waitFor() — this process is meant to outlive the launcher
 
-        SeleniumConfig config = SeleniumConfig.getConfig();
         long maxWait = config.getLong(SeleniumSettings.HOST_TIMEOUT.key()) * 1000;
         long maxTime = System.currentTimeMillis() + maxWait;
         while (!GridServer.isHubActive(hubUrl)) {

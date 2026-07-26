@@ -37,4 +37,13 @@ public interface SidecarSupport {
      * @return {@code true} if the sidecar is active; otherwise {@code false}
      */
     boolean isActive();
+
+    /**
+     * Get representative classes for the dependency contexts required by this
+     * sidecar support implementation, for classpath assembly purposes (e.g. when
+     * launching a detached grid/sidecar worker process).
+     *
+     * @return array of representative dependency context class names
+     */
+    String[] getDependencyContexts();
 }
