@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.core.GridServer;
 import com.nordstrom.automation.selenium.core.LocalGridUtility;
+import com.nordstrom.automation.selenium.core.LocalSeleniumGrid;
 
 /**
  * This interface extends {@link DriverPlugin} with the ability to create and manage
@@ -54,7 +55,7 @@ public interface ManagedDriverPlugin extends DriverPlugin {
      */
     default GridServer create(SeleniumConfig config, URL hubUrl) throws IOException {
         String launcherClassName = config.getString(SeleniumSettings.GRID_LAUNCHER.key());
-        String[] dependencyContexts = config.getDependencyContexts();
+        String[] dependencyContexts = LocalSeleniumGrid.getDependencyContexts(config);
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
         Path workingPath = (workingDir == null || workingDir.isEmpty()) ? null : Paths.get(workingDir);
         return create(config, hubUrl.getPort(), launcherClassName, dependencyContexts, hubUrl, workingPath);

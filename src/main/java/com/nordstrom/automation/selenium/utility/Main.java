@@ -169,7 +169,7 @@ public class Main {
             throws IOException, InterruptedException, TimeoutException {
         SeleniumConfig config = SeleniumConfig.getConfig();
 
-        List<String> allContexts = new ArrayList<>(Arrays.asList(config.getDependencyContexts()));
+        List<String> allContexts = new ArrayList<>(Arrays.asList(LocalSeleniumGrid.getDependencyContexts(config)));
         allContexts.addAll(Arrays.asList(CORE_CONTEXTS));
 
         SidecarSupport support = ServiceLoader.load(SidecarSupport.class).iterator().next();
