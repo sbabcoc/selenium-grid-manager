@@ -7,10 +7,13 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import org.openqa.selenium.net.PortProber;
@@ -21,6 +24,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.LifecycleRegistrationStrategy;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.sidecar.GridHubPortAllocator;
+import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.automation.selenium.sidecar.SidecarManager;
 import com.nordstrom.automation.selenium.utility.HostUtils;
 import com.nordstrom.common.file.PathUtils;
@@ -42,7 +46,38 @@ public class LocalSeleniumGrid extends SeleniumGrid {
     private static final String OPT_ROLE = "-role";
     private static final String OPT_HOST = "-host";
     private static final String OPT_PORT = "-port";
-    
+
+    private static final String[] DEPENDENCY_CONTEXTS = {
+        // --- core framework dependencies (version-agnostic) ---
+        "org.apache.commons.configuration2.ex.ConfigurationException",
+        "com.nordstrom.automation.selenium.exceptions.SeleniumFoundationException",
+        "com.nordstrom.automation.settings.SettingsCore",
+        "org.apache.commons.logging.Log",
+        "org.apache.commons.text.lookup.StringLookupFactory",
+        "org.apache.commons.beanutils.BeanIntrospector",
+        "org.apache.http.client.methods.HttpUriRequest",
+        "org.apache.http.HttpRequest",
+
+        // --- dependencies common to both S3 and S4 (see S4 LocalSeleniumGrid for counterpart) ---
+        "com.nordstrom.common.file.PathUtils",             // java-utils
+        "org.apache.commons.lang3.reflect.FieldUtils",     // commons-lang3
+        "com.beust.jcommander.JCommander",                 // jcommander
+        "com.google.common.collect.ImmutableMap",          // guava
+        "org.openqa.selenium.BuildInfo",                   // selenium-api
+        "javax.servlet.Servlet",                           // servlet-api
+        "org.openqa.selenium.json.Json",                   // selenium-remote-driver (S3) / selenium-json (S4)
+
+        // --- Selenium 3 launcher-specific dependencies ---
+        "com.nordstrom.automation.selenium.core.LocalSeleniumGrid",
+        "net.bytebuddy.matcher.ElementMatcher",
+        "org.seleniumhq.jetty9.util.thread.ThreadPool",
+        "okhttp3.ConnectionPool",
+        "okio.BufferedSource",
+        "ch.qos.logback.classic.spi.ThrowableProxy",
+        "kotlin.jvm.internal.Intrinsics",
+        "org.apache.commons.exec.Executor"
+    };
+
     /**
      * Constructor for Selenium Grid from server objects.
      * <p>
@@ -163,7 +198,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         SeleniumGrid seleniumGrid = null;
 
         String launcherClassName = config.getString(SeleniumSettings.GRID_LAUNCHER.key());
-        String[] dependencyContexts = config.getDependencyContexts();
+        String[] dependencyContexts = getDependencyContexts(config);
         String workingDir = config.getString(SeleniumSettings.GRID_WORKING_DIR.key());
         Path workingPath = (workingDir == null || workingDir.isEmpty()) ? null : Paths.get(workingDir);
 
@@ -180,6 +215,14 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         if (resolvedHubUrl != null && GridServer.isHubActive(resolvedHubUrl)) {
             // verify API version matches current runtime
             LocalGridUtility.verifyHubVersion(resolvedHubUrl);
+            boolean managed = SidecarClient.isManaged(resolvedHubUrl);
+            if (config.getBoolean(SeleniumSettings.MONITOR_UNMANAGED_HUBS.key()) && !managed) {
+                int apiVersion = GridUtility.probeApiVersion(resolvedHubUrl);
+                if (apiVersion > 0) {
+                    SidecarManager.ensureRunning();
+                    SidecarClient.monitor(resolvedHubUrl, apiVersion);
+                }
+            }
             seleniumGrid = new SeleniumGrid(resolvedHubUrl);
             hubServer = seleniumGrid.getHubServer();
         // if hub URL or port was specified — launch at that port
@@ -325,11 +368,47 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             argsList.add(0, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + address);
         }
         
-        argsList.add(0, System.getProperty("java.home") + File.separator
-                + "bin" + File.separator + "java");
+        argsList.add(0, System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
         ProcessBuilder builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
         return new LocalGridServer(hostUrl, portNum, isHub, hubPort,
                 builder, workingPath, outputPath, registrationStrategy);
+    }
+
+    /**
+     * Get dependency contexts for the configured Grid launcher and <b>Selenium
+     * Foundation</b>'s own core framework, combined with any additions/removals
+     * specified via {@link SeleniumSettings#DEP_CONTEXTS_INSERT} and
+     * {@link SeleniumSettings#DEP_CONTEXTS_DELETE}.
+     *
+     * @param config {@link SeleniumConfig} object
+     * @return array of dependency context class names
+     *
+     * @since [next-major]
+     */
+    public static String[] getDependencyContexts(SeleniumConfig config) {
+        String gridLauncher = config.getString(SeleniumSettings.GRID_LAUNCHER.key());
+        if (gridLauncher == null) {
+            throw new IllegalStateException("No Grid launcher setting was specified — set "
+                    + SeleniumSettings.GRID_LAUNCHER.key());
+        }
+
+        Set<String> contexts = new LinkedHashSet<>();
+        contexts.add(gridLauncher);
+
+        String slotMatcher = config.getString(SeleniumSettings.SLOT_MATCHER.key());
+        if (slotMatcher != null) contexts.add(slotMatcher);
+
+        contexts.addAll(Arrays.asList(DEPENDENCY_CONTEXTS));
+
+        String contextsToDelete = config.getString(SeleniumSettings.DEP_CONTEXTS_DELETE.key());
+        if (contextsToDelete != null && !contextsToDelete.trim().isEmpty()) {
+            contexts.removeAll(Arrays.asList(contextsToDelete.trim().split("\\s*,\\s*")));
+        }
+        String contextsToInsert = config.getString(SeleniumSettings.DEP_CONTEXTS_INSERT.key());
+        if (contextsToInsert != null && !contextsToInsert.trim().isEmpty()) {
+            contexts.addAll(Arrays.asList(contextsToInsert.trim().split("\\s*,\\s*")));
+        }
+        return contexts.toArray(new String[0]);
     }
 }

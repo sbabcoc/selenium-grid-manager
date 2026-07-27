@@ -70,6 +70,9 @@ public class GridRegistry {
         synchronized (getOrCreateList(registration.getHubPort())) {
             getOrCreateList(registration.getHubPort()).add(registration);
         }
+        if (registration.isHub()) {
+            MonitoredGridRegistry.getInstance().remove(registration.getServerUrl());
+        }
         LOGGER.debug("Registered {} server at {} for grid collection on port {}",
                 registration.isHub() ? "hub" : "node/relay/appium",
                 registration.getServerUrl(), registration.getHubPort());

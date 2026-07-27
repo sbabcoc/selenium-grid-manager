@@ -10,6 +10,7 @@ import java.util.List;
 public class GridScanResult {
 
     private final List<HubStatus> managedGrids;
+    private final List<HubStatus> monitoredGrids;
     private final List<HubStatus> discoveredGrids;
     private final String exampleSiteUrl;
 
@@ -17,18 +18,23 @@ public class GridScanResult {
      * Constructor for grid scan result.
      *
      * @param managedGrids list of managed hub statuses
+     * @param monitoredGrids list of monitored-only hub statuses
      * @param discoveredGrids list of discovered hub statuses
      * @param exampleSiteUrl URL of the example page site; {@code null} if not active
      */
-    public GridScanResult(List<HubStatus> managedGrids, List<HubStatus> discoveredGrids,
-            String exampleSiteUrl) {
+    public GridScanResult(List<HubStatus> managedGrids, List<HubStatus> monitoredGrids,
+            List<HubStatus> discoveredGrids, String exampleSiteUrl) {
         this.managedGrids = managedGrids;
+        this.monitoredGrids = monitoredGrids;
         this.discoveredGrids = discoveredGrids;
         this.exampleSiteUrl = exampleSiteUrl;
     }
 
     /** @return list of managed hub statuses */
     public List<HubStatus> getManagedGrids() { return managedGrids; }
+
+    /** @return list of monitored-only hub statuses */
+    public List<HubStatus> getMonitoredGrids() { return monitoredGrids; }
 
     /** @return list of discovered hub statuses */
     public List<HubStatus> getDiscoveredGrids() { return discoveredGrids; }

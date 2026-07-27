@@ -13,10 +13,8 @@ import com.nordstrom.common.base.UncheckedThrow;
  * Immutable data class representing the status of a Selenium Grid hub instance.
  * <p>
  * Instances are returned by the sidecar's {@value SidecarPathName#STATUS_PATH}
- * endpoint as part of a {@link GridScanResult}. Three categories of hub are
- * represented: managed (launched and registered with this sidecar), discovered
- * (found by background scan), and monitored (future enhancement — explicitly
- * registered remote instances).
+ * endpoint as part of a {@link GridScanResult}. Each instance carries a
+ * {@link HubRelation} describing exactly how the sidecar relates to the hub.
  *
  * @since 36.0.0
  */
@@ -27,18 +25,16 @@ public class HubStatus {
     private final int apiVersion;
     private final Integer pubPort;
     private final Integer subPort;
-    private final boolean managed;
-    private final boolean monitored;
+    private final HubRelation relation;
 
     private HubStatus(URL hubUrl, boolean active, int apiVersion,
-            Integer pubPort, Integer subPort, boolean managed, boolean monitored) {
+            Integer pubPort, Integer subPort, HubRelation relation) {
         this.hubUrl = hubUrl;
         this.active = active;
         this.apiVersion = apiVersion;
         this.pubPort = pubPort;
         this.subPort = subPort;
-        this.managed = managed;
-        this.monitored = monitored;
+        this.relation = relation;
     }
 
     /**
@@ -57,8 +53,27 @@ public class HubStatus {
      */
     public static HubStatus managed(URL hubUrl, int apiVersion, boolean active,
             Integer pubPort, Integer subPort) {
-        if (apiVersion == 3) return new HubStatus(hubUrl, active, 3, null, null, true, false);
-        if (apiVersion == 4) return new HubStatus(hubUrl, active, 4, pubPort, subPort, true, false);
+        if (apiVersion == 3) return new HubStatus(hubUrl, active, 3, null, null, HubRelation.MANAGED);
+        if (apiVersion == 4) return new HubStatus(hubUrl, active, 4, pubPort, subPort, HubRelation.MANAGED);
+        return null;
+    }
+
+    /**
+     * Create a {@link HubStatus} for a monitored-only Grid hub of the specified API version
+     * (a hub the sidecar tracks but did not launch and does not manage).
+     * <p>
+     * Returns {@code null} if the specified API version is not recognized.
+     *
+     * @param hubUrl {@link URL} of the monitored hub
+     * @param apiVersion Selenium API version (3 or 4)
+     * @return {@link HubStatus} for the monitored hub, or {@code null} if the API version
+     *         is not recognized
+     * @since [next-major]
+     */
+    public static HubStatus monitored(URL hubUrl, int apiVersion) {
+        if (apiVersion == 3 || apiVersion == 4) {
+            return new HubStatus(hubUrl, true, apiVersion, null, null, HubRelation.MONITORED);
+        }
         return null;
     }
 
@@ -76,7 +91,7 @@ public class HubStatus {
      */
     public static HubStatus discovered(URL hubUrl, int apiVersion) {
         if (apiVersion == 3 || apiVersion == 4) {
-            return new HubStatus(hubUrl, true, apiVersion, null, null, false, false);
+            return new HubStatus(hubUrl, true, apiVersion, null, null, HubRelation.DISCOVERED);
         }
         return null;
     }
@@ -93,8 +108,7 @@ public class HubStatus {
         map.put("apiVersion", apiVersion);
         if (pubPort != null) map.put("pubPort", pubPort);
         if (subPort != null) map.put("subPort", subPort);
-        map.put("managed", managed);
-        map.put("monitored", monitored);
+        map.put("relation", relation.name());
         return map;
     }
 
@@ -111,9 +125,8 @@ public class HubStatus {
             int apiVersion = ((Long) map.get("apiVersion")).intValue();
             Integer pubPort = map.containsKey("pubPort") ? ((Long) map.get("pubPort")).intValue() : null;
             Integer subPort = map.containsKey("subPort") ? ((Long) map.get("subPort")).intValue() : null;
-            boolean managed = (Boolean) map.get("managed");
-            boolean monitored = (Boolean) map.get("monitored");
-            return new HubStatus(hubUrl, active, apiVersion, pubPort, subPort, managed, monitored);
+            HubRelation relation = HubRelation.valueOf((String) map.get("relation"));
+            return new HubStatus(hubUrl, active, apiVersion, pubPort, subPort, relation);
         } catch (MalformedURLException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
@@ -155,16 +168,24 @@ public class HubStatus {
     public Integer getSubPort() { return subPort; }
 
     /**
+     * Get the relationship between the sidecar and this hub.
+     *
+     * @return {@link HubRelation} for this hub
+     * @since [next-major]
+     */
+    public HubRelation getRelation() { return relation; }
+
+    /**
      * Determine if this hub is managed by the sidecar.
      * 
      * @return {@code true} if this hub is managed by the sidecar
      */
-    public boolean isManaged() { return managed; }
+    public boolean isManaged() { return relation == HubRelation.MANAGED; }
 
     /**
      * Determine if this hub is being monitored by the sidecar.
      * 
      * @return {@code true} if this hub is being monitored by the sidecar
      */
-    public boolean isMonitored() { return monitored; }
+    public boolean isMonitored() { return relation == HubRelation.MONITORED; }
 }

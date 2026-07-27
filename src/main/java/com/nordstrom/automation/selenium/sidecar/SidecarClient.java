@@ -2,14 +2,19 @@ package com.nordstrom.automation.selenium.sidecar;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.openqa.selenium.json.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,17 +111,72 @@ public class SidecarClient {
     }
 
     /**
-     * URL-encode the specified value for use in a form body.
+     * Determine if the specified hub is already managed by the sidecar.
      *
-     * @param value value to encode
-     * @return encoded value
+     * @param hubUrl {@link URL} of the hub to check
+     * @return {@code true} if the specified hub is currently managed; otherwise {@code false}
+     * @throws SidecarUnavailableException if the status request fails
+     *
+     * @since [next-major]
      */
-    private static String encode(String value) {
-        try {
-            return java.net.URLEncoder.encode(value, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // UTF-8 is always supported
+    public static boolean isManaged(URL hubUrl) {
+        return checkRelation(hubUrl, "managedGrids", "MANAGED");
+    }
+
+    /**
+     * Determine if the specified hub is already monitored by the sidecar.
+     *
+     * @param hubUrl {@link URL} of the hub to check
+     * @return {@code true} if the specified hub is currently monitored; otherwise {@code false}
+     * @throws SidecarUnavailableException if the status request fails
+     *
+     * @since [next-major]
+     */
+    public static boolean isMonitored(URL hubUrl) {
+        return checkRelation(hubUrl, "monitoredGrids", "MONITORED");
+    }
+
+    /**
+     * Fetch and parse the sidecar's current status.
+     *
+     * @return parsed status map
+     * @throws SidecarUnavailableException if the status request fails
+     */
+    private static Map<String, Object> fetchStatus() {
+        URL url = endpointUrl(SidecarPathName.STATUS_PATH);
+        String json;
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(url.toURI());
+            try (CloseableHttpResponse response = client.execute(request)) {
+                json = EntityUtils.toString(response.getEntity());
+            }
+        } catch (Exception e) {
+            throw new SidecarUnavailableException(url, e);
         }
+        return SeleniumConfig.getConfig().fromJson(json, Json.MAP_TYPE);
+    }
+
+    /**
+     * Check the relation for the specified hub within the named list of the sidecar's
+     * current status response.
+     *
+     * @param hubUrl {@link URL} of the hub to check
+     * @param listKey key of the status list to search (e.g. {@code "managedGrids"})
+     * @param expectedRelation expected {@code relation} value (e.g. {@code "MANAGED"})
+     * @return {@code true} if the specified hub is found with the expected relation; otherwise {@code false}
+     */
+    @SuppressWarnings("unchecked")
+    private static boolean checkRelation(URL hubUrl, String listKey, String expectedRelation) {
+        Map<String, Object> status = fetchStatus();
+        List<Object> grids = (List<Object>) status.getOrDefault(listKey, Collections.emptyList());
+        String hubUrlStr = hubUrl.toString();
+        for (Object entry : grids) {
+            Map<String, Object> grid = (Map<String, Object>) entry;
+            if (hubUrlStr.equals(grid.get("hubUrl"))) {
+                return expectedRelation.equals(grid.get("relation"));
+            }
+        }
+        return false;
     }
 
     /**
@@ -131,6 +191,20 @@ public class SidecarClient {
             return UriUtils.makeBasicURI("http", HostUtils.getLocalHost(), port, path).toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException("Unable to create sidecar endpoint URL for path: " + path, e);
+        }
+    }
+
+    /**
+     * URL-encode the specified value for use in a form body.
+     *
+     * @param value value to encode
+     * @return encoded value
+     */
+    private static String encode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // UTF-8 is always supported
         }
     }
 
