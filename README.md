@@ -202,3 +202,61 @@ Unless disabled with the `noRedirect` option, `selenium-grid-manager` redirects 
 * `grid-node*.log` for node server output
 
 The default output folder can be overridden with the `logsFolder` option, specifying either absolute or relative path. If a relative path is specified, or the default ("logs") is accepted, logs are written to a sub-folder of the current working directory, which can be overridden with the `workingDir` option.
+
+## Standalone Installation
+
+`selenium-grid-manager` can be run as a standalone local Grid management system,
+without needing to build or check out the project source — similar to how the
+legacy `local-grid-hub` tool worked with Maven's `exec:java`.
+
+### 1. Download the JAR
+
+Download the jar matching your target Selenium API version from
+[Maven Central](https://central.sonatype.com/artifact/com.nordstrom.ui-tools/selenium-grid-manager)
+into a working directory of your choice:
+
+```bash
+mkdir my-grid && cd my-grid
+curl -O https://repo1.maven.org/maven2/com/nordstrom/ui-tools/selenium-grid-manager/<version>/selenium-grid-manager-<version>-s4.jar
+```
+
+> **NOTE**: Substitute `-s3` for `-s4` in the filename if you need the
+> Selenium 3 API version instead.
+
+### 2. Extract the Gradle build files
+
+Run the jar directly to extract the Gradle build scripts and wrapper needed to
+launch and manage Grid instances:
+
+```bash
+java -jar selenium-grid-manager-<version>-s4.jar
+```
+
+This extracts `build.gradle`, `settings.gradle`, `selenium3Deps.gradle`,
+`selenium4Deps.gradle`, `gradlew`, `gradlew.bat`, and the Gradle wrapper into
+the current directory, alongside the jar you just ran — and records the
+jar's own version and Selenium API profile in `gradle.properties`, so
+subsequent commands resolve the correct dependencies automatically.
+
+### 3. Launch a Grid instance
+
+```bash
+./gradlew runGrid -Pbrowsers=chrome,firefox
+```
+
+This launches a hub and the requested browser nodes, printing the hub URL
+once ready. The process detaches from the launching shell — the grid and its
+sidecar management console keep running after `runGrid` returns.
+
+### 4. Manage the running Grid
+
+- **Console**: the printed startup output includes a link to the sidecar's
+  management console, where you can view managed/monitored/discovered Grid
+  instances and shut them down.
+- **Command line**: shut down a specific hub with:
+```bash
+  ./gradlew runGrid -Pexec.args="-shutdown" -Dselenium.hub.port=<port>
+```
+- **Add nodes to a running Grid**: run `runGrid` again with a different
+  `-Pbrowsers` selection while the hub from step 3 is still active — the new
+  node(s) register with the same hub and sidecar automatically.
