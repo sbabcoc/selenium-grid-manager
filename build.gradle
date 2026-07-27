@@ -82,10 +82,13 @@ scmVersion {
 }
 
 /* Version logic */
-def verBits = scmVersion.version.split('-')
+def resolvedVersion = project.hasProperty('artifactVersion')
+        ? project.property('artifactVersion').toString()
+        : scmVersion.version
+def verBits = resolvedVersion.split('-')
 def seleniumApi = "s${profile.charAt(8)}"
 ext.baseVersion = verBits[0]
-ext.isSnapshot = !scmVersion.version.matches('\\d+\\.\\d+\\.\\d+')
+ext.isSnapshot = !resolvedVersion.matches('\\d+\\.\\d+\\.\\d+')
 ext.archiveVer = "${baseVersion}-${seleniumApi}" + (isSnapshot ? '-SNAPSHOT' : '')
 ext.archiveBase = "${rootProject.name}-${archiveVer}"
 version = archiveVer
@@ -165,12 +168,14 @@ tasks.named('jar', Jar) {
     archiveFileName.set("${archiveBase}.jar")
     destinationDirectory.set(libsDirProvider)
 
-    // set Install as the executable main class
-    manifest {
-        attributes 'Main-Class': 'com.nordstrom.automation.selenium.utility.Install'
-    }
+	manifest {
+	    attributes(
+	        'Main-Class': 'com.nordstrom.automation.selenium.utility.Install',
+	        'Implementation-Version': archiveVer,
+	        'Selenium-Profile': profile
+	    )
+	}
 
-    // bundle Gradle build files for installer extraction
     from('.') {
         include 'build.gradle'
         include 'settings.gradle'
@@ -210,6 +215,8 @@ tasks.register('runGrid', JavaExec) {
     group = 'Application'
     description = 'Launch a local Selenium Grid instance'
 
+    def selfJar = files("${archiveBase}.jar")
+
     // parse selected browsers from -Pbrowsers=chrome,firefox
     def selectedBrowsers = (project.findProperty('browsers') ?: '')
         .split(',')
@@ -220,7 +227,7 @@ tasks.register('runGrid', JavaExec) {
     // extend runtimeClasspath and include browser-specific dependencies.
     // if no browsers selected, fall back to plain runtimeClasspath (hub only).
     if (selectedBrowsers) {
-        classpath = sourceSets.main.output + configurations.runtimeClasspath + files(
+        classpath = selfJar + configurations.runtimeClasspath + files(
             selectedBrowsers.collectMany { browser ->
                 configurations["${browser}Runtime"]
                     .resolvedConfiguration
@@ -229,7 +236,7 @@ tasks.register('runGrid', JavaExec) {
             }.unique()
         )
     } else {
-        classpath = sourceSets.main.output + configurations.runtimeClasspath
+        classpath = selfJar + configurations.runtimeClasspath
     }
 
     mainClass = 'com.nordstrom.automation.selenium.utility.Main'

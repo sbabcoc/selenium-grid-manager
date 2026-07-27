@@ -2,6 +2,8 @@ package com.nordstrom.automation.selenium.utility;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 
 /**
  * This class implements the installer for {@code selenium-grid-manager}.
@@ -12,7 +14,10 @@ import java.nio.file.*;
  *     {@code $ java -jar selenium-grid-manager-<version>.jar}</li>
  * </ul>
  * This extracts the Gradle build files and wrapper needed to launch,
- * augment, and shut down local Selenium Grid collections.
+ * augment, and shut down local Selenium Grid collections, and records
+ * the installed artifact's version and Selenium API profile in
+ * {@code gradle.properties} so the extracted build resolves dependencies
+ * correctly without needing a git repository or manual profile selection.
  */
 public class Install {
 
@@ -59,6 +64,69 @@ public class Install {
             } else {
                 System.out.println("Already exists: " + target.getAbsolutePath());
             }
+        }
+        writeInstallProperties();
+    }
+
+    /**
+     * Record this JAR's own artifact version and Selenium API profile in
+     * {@code gradle.properties}, so the extracted build resolves matching
+     * dependency versions and the correct API profile without needing a
+     * git repository or manual {@code -Pprofile} selection.
+     *
+     * @throws IOException if an error occurs writing the properties file
+     */
+    private static void writeInstallProperties() throws IOException {
+        String version = Install.class.getPackage().getImplementationVersion();
+        String profile = readManifestAttribute("Selenium-Profile");
+
+        if (version == null && profile == null) {
+            System.err.println("Unable to determine artifact version or profile — "
+                    + "expected attributes not found in JAR manifest");
+            return;
+        }
+
+        File propsFile = Paths.get("gradle.properties").toFile();
+        StringBuilder toAppend = new StringBuilder();
+        String existing = propsFile.exists()
+                ? new String(Files.readAllBytes(propsFile.toPath())) : "";
+
+        if (version != null && !existing.contains("artifactVersion=")) {
+            toAppend.append("artifactVersion=").append(version).append(System.lineSeparator());
+        }
+        if (profile != null && !existing.contains("profile=")) {
+            toAppend.append("profile=").append(profile).append(System.lineSeparator());
+        }
+
+        if (toAppend.length() == 0) {
+            System.out.println("gradle.properties already specifies artifactVersion/profile — leaving unchanged");
+            return;
+        }
+
+        if (propsFile.exists()) {
+            Files.write(propsFile.toPath(), toAppend.toString().getBytes(),
+                    java.nio.file.StandardOpenOption.APPEND);
+        } else {
+            Files.write(propsFile.toPath(), toAppend.toString().getBytes());
+        }
+        System.out.println("Recorded install properties in " + propsFile.getAbsolutePath());
+    }
+
+    /**
+     * Read the specified attribute from this JAR's own manifest.
+     *
+     * @param name manifest attribute name
+     * @return attribute value; {@code null} if not found or the JAR location cannot be determined
+     */
+    private static String readManifestAttribute(String name) {
+        try {
+            String jarPath = Install.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+            try (JarFile jarFile = new JarFile(jarPath)) {
+                Attributes attrs = jarFile.getManifest().getMainAttributes();
+                return attrs.getValue(name);
+            }
+        } catch (Exception e) {
+            return null;
         }
     }
 
