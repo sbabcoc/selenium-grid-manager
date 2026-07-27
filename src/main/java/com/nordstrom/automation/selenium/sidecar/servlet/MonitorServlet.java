@@ -17,7 +17,7 @@ import com.nordstrom.automation.selenium.sidecar.MonitoredGridRegistry;
  * No authorization is required — monitoring is a passive, read-visibility-only
  * operation with no ability to affect a hub's lifecycle.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 @WebServlet(urlPatterns = { SidecarPathName.MONITOR_PATH })
 public class MonitorServlet extends HttpServlet {

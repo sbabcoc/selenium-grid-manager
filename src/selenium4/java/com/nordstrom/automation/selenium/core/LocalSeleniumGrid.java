@@ -436,7 +436,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * @param config {@link SeleniumConfig} object
      * @return array of dependency context class names
      *
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static String[] getDependencyContexts(SeleniumConfig config) {
         String gridLauncher = config.getString(SeleniumSettings.GRID_LAUNCHER.key());

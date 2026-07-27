@@ -29,7 +29,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
  * <p>
  * This class is a static singleton accessed by sidecar servlets via {@link #getInstance()}.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 public class MonitoredGridRegistry {
 

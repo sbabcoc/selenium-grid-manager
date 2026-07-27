@@ -18,7 +18,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarAuthStrategy;
  * Accepts POST requests with a {@code hubUrl} parameter. Requires authorization
  * via {@link SidecarAuthStrategy}.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 @WebServlet(urlPatterns = { SidecarPathName.UNMONITOR_PATH })
 public class UnmonitorServlet extends HttpServlet {

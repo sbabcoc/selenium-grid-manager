@@ -8,7 +8,7 @@ package com.nordstrom.automation.selenium.sidecar;
  * monitored, and a hub the sidecar is monitoring is by definition not one it
  * launched.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 public enum HubRelation {
 

@@ -88,7 +88,7 @@ public class SidecarClient {
      * @param apiVersion Selenium API version (3 or 4)
      * @throws SidecarUnavailableException if the request fails
      *
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static void monitor(URL hubUrl, int apiVersion) {
         URL url = endpointUrl(SidecarPathName.MONITOR_PATH);
@@ -102,7 +102,7 @@ public class SidecarClient {
      * @param hubUrl {@link URL} of the hub to stop monitoring
      * @throws SidecarUnavailableException if the request fails
      *
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static void unmonitor(URL hubUrl) {
         URL url = endpointUrl(SidecarPathName.UNMONITOR_PATH);
@@ -117,7 +117,7 @@ public class SidecarClient {
      * @return {@code true} if the specified hub is currently managed; otherwise {@code false}
      * @throws SidecarUnavailableException if the status request fails
      *
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static boolean isManaged(URL hubUrl) {
         return checkRelation(hubUrl, "managedGrids", "MANAGED");
@@ -130,7 +130,7 @@ public class SidecarClient {
      * @return {@code true} if the specified hub is currently monitored; otherwise {@code false}
      * @throws SidecarUnavailableException if the status request fails
      *
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static boolean isMonitored(URL hubUrl) {
         return checkRelation(hubUrl, "monitoredGrids", "MONITORED");

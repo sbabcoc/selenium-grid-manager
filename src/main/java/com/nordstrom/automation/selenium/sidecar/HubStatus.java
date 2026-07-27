@@ -68,7 +68,7 @@ public class HubStatus {
      * @param apiVersion Selenium API version (3 or 4)
      * @return {@link HubStatus} for the monitored hub, or {@code null} if the API version
      *         is not recognized
-     * @since [next-major]
+     * @since 36.2.0
      */
     public static HubStatus monitored(URL hubUrl, int apiVersion) {
         if (apiVersion == 3 || apiVersion == 4) {
@@ -171,7 +171,7 @@ public class HubStatus {
      * Get the relationship between the sidecar and this hub.
      *
      * @return {@link HubRelation} for this hub
-     * @since [next-major]
+     * @since 36.2.0
      */
     public HubRelation getRelation() { return relation; }
 

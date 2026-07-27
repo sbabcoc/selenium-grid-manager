@@ -8,7 +8,7 @@ import com.nordstrom.automation.selenium.sidecar.SidecarManager;
  * This class registers the unmanaged hub monitor with {@link SeleniumGrid} when
  * {@code selenium-grid-manager} is on the classpath.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 public class UnmanagedGridMonitorPlugin implements GridMonitorPlugin {
     static {

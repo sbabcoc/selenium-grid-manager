@@ -12,7 +12,7 @@ import com.nordstrom.common.base.UncheckedThrow;
  * the sidecar's monitored list. Monitored hubs are tracked for console visibility
  * and easy access only — the sidecar never attempts to shut them down.
  *
- * @since [next-major]
+ * @since 36.2.0
  */
 public class MonitoredGrid {
 
