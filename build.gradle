@@ -171,7 +171,7 @@ tasks.named('jar', Jar) {
 	manifest {
 	    attributes(
 	        'Main-Class': 'com.nordstrom.automation.selenium.utility.Install',
-	        'Implementation-Version': archiveVer,
+	        'Implementation-Version': baseVersion,
 	        'Selenium-Profile': profile
 	    )
 	}
