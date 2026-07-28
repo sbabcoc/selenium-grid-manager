@@ -116,7 +116,7 @@ public class FoundationSlotMatcher implements CapabilityMatcher {
                 return providedPlatform != null && providedPlatform.is(requestedPlatform);
             }
 
-            return provided != null && Objects.equals(requested.toString(), provided.toString());
+            return provided != null && semanticVersionMatch(provided.toString(), requested.toString());
         }
     }
 
@@ -132,6 +132,33 @@ public class FoundationSlotMatcher implements CapabilityMatcher {
             return requestedCapabilities.entrySet().stream().filter(entry -> !entry.getKey().startsWith(GRID_TOKEN))
                     .filter(entry -> toConsider.contains(entry.getKey())).filter(entry -> !anything(entry.getValue()))
                     .allMatch(entry -> entry.getValue().equals(providedCapabilities.get(entry.getKey())));
+        }
+    }
+
+    /**
+     * Validates {@code appium:automationName} unconditionally (no {@link #addToConsider(String)}
+     * registration required), the same narrow fix applied to the Selenium 4 variant of this
+     * class. Without this, nothing in the default validator chain inspects {@code
+     * appium:automationName} or any other {@code :}-namespaced capability at all — so on a grid
+     * with multiple Appium personalities that happen to share a platform family (e.g. an
+     * HtmlUnit node and a Mac2 node both reporting {@code platform=MAC}), a request that never
+     * specifies {@code browserName} can match either one, since every other default validator
+     * short-circuits to {@code true} when the request doesn't mention what it checks. This is
+     * request-driven the same way {@link SimplePropertyValidator} already is: if the provided
+     * capabilities don't declare {@code appium:automationName} at all, {@code Map.get()} returns
+     * {@code null}, and a non-null requested value can never {@code .equals()} that, so the
+     * mismatch is caught correctly without any extra null-guarding.
+     */
+    class AutomationNameValidator implements Validator {
+        private static final String AUTOMATION_NAME = "appium:automationName";
+
+        @Override
+        public Boolean apply(Map<String, Object> providedCapabilities, Map<String, Object> requestedCapabilities) {
+            Object requested = requestedCapabilities.get(AUTOMATION_NAME);
+            if (anything(requested)) {
+                return true;
+            }
+            return requested.equals(providedCapabilities.get(AUTOMATION_NAME));
         }
     }
 
@@ -193,7 +220,7 @@ public class FoundationSlotMatcher implements CapabilityMatcher {
     {
         validators.addAll(Arrays.asList(new PlatformValidator(), new AliasedPropertyValidator(BROWSER_NAME, "browser"),
                 new BrowserVersionValidator(), new SimplePropertyValidator(CapabilityType.APPLICATION_NAME),
-                new FirefoxSpecificValidator(), new SafariSpecificValidator()));
+                new AutomationNameValidator(), new FirefoxSpecificValidator(), new SafariSpecificValidator()));
     }
 
     public void addToConsider(String capabilityName) {
@@ -217,5 +244,31 @@ public class FoundationSlotMatcher implements CapabilityMatcher {
         } catch (WebDriverException ex) {
             return null;
         }
+    }
+
+    /**
+     * Compare two browser version strings with dot-separated, prefix-based matching, the same
+     * semantics used for browserVersion matching in the Selenium 4 variant of this class: a
+     * less-specific version (e.g. "131") matches a more-specific one (e.g. "131.0.6778.85") as
+     * long as every segment they share in common is identical, but "131.0.6778.95" does not
+     * match "131.0.6778.85", since the fourth segment actually differs. Segments are compared as
+     * strings, not numerically.
+     * <p>
+     * Plain String.split/equals — no external version-parsing library — so this compiles and
+     * runs under Java 8.
+     */
+    private boolean semanticVersionMatch(String providedVersion, String requestedVersion) {
+        if (providedVersion == null || requestedVersion == null) {
+            return Objects.equals(providedVersion, requestedVersion);
+        }
+        String[] providedParts = providedVersion.split("\\.");
+        String[] requestedParts = requestedVersion.split("\\.");
+        int length = Math.min(providedParts.length, requestedParts.length);
+        for (int i = 0; i < length; i++) {
+            if (!providedParts[i].equals(requestedParts[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 }
