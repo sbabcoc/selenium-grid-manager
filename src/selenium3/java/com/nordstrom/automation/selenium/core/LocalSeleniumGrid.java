@@ -75,7 +75,15 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         "okio.BufferedSource",
         "ch.qos.logback.classic.spi.ThrowableProxy",
         "kotlin.jvm.internal.Intrinsics",
-        "org.apache.commons.exec.Executor"
+        "org.apache.commons.exec.Executor",
+        "io.github.bonigarcia.wdm.WebDriverManager",
+        "org.apache.hc.core5.http.ClassicHttpRequest",
+        "org.apache.hc.client5.http.ssl.TlsSocketStrategy",
+        "org.brotli.dec.BrotliInputStream",
+        "org.apache.commons.compress.archivers.tar.TarArchiveInputStream",
+        "org.apache.commons.io.input.NullInputStream",
+        "org.apache.hc.core5.http2.HttpVersionPolicy",
+        "com.google.gson.JsonSyntaxException"
     };
 
     /**
