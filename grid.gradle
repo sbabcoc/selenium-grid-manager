@@ -1,0 +1,106 @@
+// grid.gradle — shared build logic for selenium-grid-manager
+//
+// Applied by BOTH the dev build.gradle (which also applies axion-release,
+// publishing, signing, etc.) and the standalone runtime.gradle (which is
+// packaged into the distributed jar, renamed to build.gradle, and extracted
+// by the Install class).
+//
+// Contract: before applying this file, the including build.gradle must
+// already have defined: profile, baseVersion, seleniumApi, isSnapshot,
+// archiveVer, archiveBase, and must have applied the 'java-library' and
+// 'application' plugins.
+
+ext.pluginClasses = [
+    chrome      : 'com.nordstrom.automation.selenium.plugins.ChromePlugin',
+    edge        : 'com.nordstrom.automation.selenium.plugins.EdgePlugin',
+    espresso    : 'com.nordstrom.automation.selenium.plugins.EspressoPlugin',
+    firefox     : 'com.nordstrom.automation.selenium.plugins.FirefoxPlugin',
+    htmlunit    : 'com.nordstrom.automation.selenium.plugins.HtmlUnitPlugin',
+    mac2        : 'com.nordstrom.automation.selenium.plugins.Mac2Plugin',
+    safari      : 'com.nordstrom.automation.selenium.plugins.SafariPlugin',
+    uiautomator2: 'com.nordstrom.automation.selenium.plugins.UiAutomator2Plugin',
+    windows     : 'com.nordstrom.automation.selenium.plugins.WindowsPlugin',
+    xcuitest    : 'com.nordstrom.automation.selenium.plugins.XCUITestPlugin'
+]
+
+apply from: "${profile}Deps.gradle"
+
+application {
+    mainClass = 'com.nordstrom.automation.selenium.utility.Main'
+}
+
+/* Run Grid task - equivalent to Maven exec:java
+ *
+ * Usage:
+ *   ./gradlew runGrid -Pbrowsers=chrome,firefox
+ *   ./gradlew runGrid -Pexec.args="-shutdown"
+ *   ./gradlew runGrid -Pbrowsers=chrome -Pexec.args="-port 4444"
+ */
+tasks.register('runGrid', JavaExec) {
+    group = 'Application'
+    description = 'Launch a local Selenium Grid instance'
+
+    def selfJar = files("${archiveBase}.jar")
+
+    // parse selected browsers from -Pbrowsers=chrome,firefox
+    def selectedBrowsers = (project.findProperty('browsers') ?: '')
+        .split(',')
+        .collect { it.trim() }
+        .findAll { it && pluginClasses.containsKey(it) }
+
+    // if browsers selected, use their runtime configurations which already
+    // extend runtimeClasspath and include browser-specific dependencies.
+    // if no browsers selected, fall back to plain runtimeClasspath (hub only).
+    if (selectedBrowsers) {
+        classpath = selfJar + configurations.runtimeClasspath + files(
+            selectedBrowsers.collectMany { browser ->
+                configurations["${browser}Runtime"]
+                    .resolvedConfiguration
+                    .resolvedArtifacts
+                    *.file
+            }.unique()
+        )
+    } else {
+        classpath = selfJar + configurations.runtimeClasspath
+    }
+
+    mainClass = 'com.nordstrom.automation.selenium.utility.Main'
+
+    // build selenium.grid.plugins system property from selected browsers
+    def plugins = selectedBrowsers
+        .collect { pluginClasses[it] }
+        .join(File.pathSeparator)
+
+    if (plugins) {
+        systemProperty 'selenium.grid.plugins', plugins
+    }
+
+    // pass through exec args: ./gradlew runGrid -Pexec.args="-shutdown"
+    if (project.hasProperty('exec.args')) {
+        args project.getProperty('exec.args').split(' ')
+    }
+
+    // pass through selenium/appium settings from command line
+    System.properties.findAll { k, _ ->
+        ['selenium.', 'appium.', 'node.', 'npm.', 'pm2.']
+            .any { k.startsWith(it) }
+    }.each { k, v ->
+        systemProperty k, v
+    }
+}
+
+/* Run Sidecar task */
+tasks.register('runSidecar', JavaExec) {
+    group = 'Application'
+    description = 'Launch the Selenium Grid Manager sidecar dashboard'
+    classpath = sourceSets.main.output + configurations.runtimeClasspath
+    mainClass = 'com.nordstrom.automation.selenium.core.SidecarDashboard'
+}
+
+/* Shared dependencies */
+dependencies {
+    api platform("com.nordstrom.ui-tools:selenium-bom-${seleniumApi}:${baseVersion}${isSnapshot ? '-SNAPSHOT' : ''}")
+
+    api 'com.nordstrom.tools:java-utils'
+    api 'com.nordstrom.tools:settings'
+}
