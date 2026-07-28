@@ -1,0 +1,42 @@
+// runtime.gradle — standalone runtime build for selenium-grid-manager
+//
+// Packaged into the distributed jar (renamed to build.gradle) and extracted
+// by the Install class for use as a local grid launcher. Deliberately has
+// NO dependency on axion-release or a git repository: version and profile
+// are read from gradle.properties, written by Install at install time (or
+// set manually, e.g. -PartifactVersion=1.4.0-SNAPSHOT -Pprofile=selenium3).
+
+plugins {
+    id 'java-library'
+    id 'application'
+}
+
+group = 'com.nordstrom.ui-tools'
+description = 'Selenium Grid Manager'
+
+ext.profile = project.findProperty('profile') ?: 'selenium4'
+assert ['selenium3', 'selenium4'].contains(profile)
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+/* Version logic — no scmVersion here; artifactVersion is required. */
+if (!project.hasProperty('artifactVersion')) {
+    throw new GradleException(
+        "Missing 'artifactVersion' in gradle.properties — this build.gradle is the " +
+        "standalone runtime variant and cannot resolve version from git. Re-run the " +
+        "installer, or set -PartifactVersion=<version> manually."
+    )
+}
+def resolvedVersion = project.property('artifactVersion').toString()
+def verBits = resolvedVersion.split('-')
+ext.seleniumApi = "s${profile.charAt(8)}"
+ext.baseVersion = verBits[0]
+ext.isSnapshot = resolvedVersion.contains('-SNAPSHOT')
+ext.archiveVer = "${baseVersion}-${seleniumApi}" + (isSnapshot ? '-SNAPSHOT' : '')
+ext.archiveBase = "${rootProject.name}-${archiveVer}"
+version = archiveVer
+
+apply from: 'grid.gradle'

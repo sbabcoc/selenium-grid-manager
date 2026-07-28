@@ -25,6 +25,7 @@ public class Install {
 
     private static final String[] RESOURCES = {
         "build.gradle",
+        "grid.gradle",
         "settings.gradle",
         "selenium4Deps.gradle",
         "selenium3Deps.gradle",
