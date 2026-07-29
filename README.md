@@ -60,6 +60,7 @@ java -jar selenium-grid-manager-36.4.0-s4.jar
 
 This extracts the following files into the current directory:
 * `build.gradle`
+* `grid.gradle`
 * `settings.gradle`
 * `selenium4Deps.gradle`
 * `selenium3Deps.gradle`
@@ -235,7 +236,7 @@ launch and manage Grid instances:
 java -jar selenium-grid-manager-<version>-s4.jar
 ```
 
-This extracts `build.gradle`, `settings.gradle`, `selenium3Deps.gradle`,
+This extracts `build.gradle`, `grid.gradle`, `settings.gradle`, `selenium3Deps.gradle`,
 `selenium4Deps.gradle`, `gradlew`, `gradlew.bat`, and the Gradle wrapper into
 the current directory, alongside the jar you just ran — and records the
 jar's own version and Selenium API profile in `gradle.properties`, so
