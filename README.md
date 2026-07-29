@@ -124,16 +124,19 @@ The `runGrid` task accepts command line options via the `exec.args` property. He
 
 * `-port` : specify port for local hub server (default = 4445)
 * `-plugins` : path-delimited list of fully-qualified node plugin classes
-* `-gridServlets` : comma-delimited list of fully-qualified servlet classes to install
+* `-hubServlets` : comma-delimited list of fully-qualified servlet classes to install on the hub server (Selenium 3 only)
+* `-nodeServlets` : comma-delimited list of fully-qualified servlet classes to install on node servers (Selenium 3 only)
+* `-serveExampleSite` : whether to serve the example page site alongside the local Grid instance (`true`/`false`); has no effect if the sidecar is already active
 * `-workingDir` : working directory for servers
 * `-logsFolder` : server output logs folder (default = "logs")
 * `-noRedirect` : disable server output redirection (default = `false`)
 * `-shutdown` : shut down active local Grid collection
+* `-help`, `-?` : display supported options and exit
 
-For example, to add support for the hub status API, specify the corresponding servlets:
+For example, to add support for the hub status API on a Selenium 3 grid, specify the corresponding servlet:
 
 ```bash
-./gradlew runGrid -Pexec.args="-gridServlets org.openqa.grid.web.servlet.HubStatusServlet"
+./gradlew runGrid -Pexec.args="-hubServlets org.openqa.grid.web.servlet.HubStatusServlet"
 ```
 
 ## Integration with Selenium Foundation
