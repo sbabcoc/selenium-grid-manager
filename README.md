@@ -20,9 +20,12 @@ The task of launching the grid servers is performed by the **Gradle** `runGrid` 
 ## System Requirements
 
 * As indicated above, `selenium-grid-manager` relies on **Gradle** to manage dependencies and execute the Java command line application that launches the specified grid collection. The Gradle wrapper is included in the installation and no separate Gradle installation is required.
-* To run pre-built `selenium-grid-manager` modules, you'll need a Java 17+ runtime environment.
-* If you want to explore the code and build it locally, you'll need a `git` client to clone the repository and a Java 17+ development kit to build the project.
-
+* To run pre-built `selenium-grid-manager` modules, you'll need a Java runtime environment matching the variant you're using:
+  * **Selenium 4** (`-s4`): Java 17+
+  * **Selenium 3** (`-s3`): Java 8+
+* If you want to explore the code and build it locally, you'll need a `git` client to clone the repository, along with a Java development kit matching the variant you're building:
+  * **Selenium 4** (`profile=selenium4`, the default): Java 17+
+  * **Selenium 3** (`profile=selenium3`): Java 8+
 
 ## Automatic Installation of Drivers 
 
