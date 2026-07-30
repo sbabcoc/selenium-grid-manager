@@ -88,6 +88,9 @@ public class AppiumGridServer extends LocalGridServer {
         builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
 
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(PathUtils.DEV_NULL);
+
         try {
             exitCode = builder.start().waitFor();
             LOGGER.debug("Deleted PM2 process: appium-{}", nodeUrl.getPort());

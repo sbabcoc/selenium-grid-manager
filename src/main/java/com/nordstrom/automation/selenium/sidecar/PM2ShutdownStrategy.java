@@ -1,6 +1,5 @@
 package com.nordstrom.automation.selenium.sidecar;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,6 @@ import com.nordstrom.common.file.PathUtils;
 class PM2ShutdownStrategy implements ShutdownStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PM2ShutdownStrategy.class);
-    private static final File DEV_NULL = new File(SystemUtils.IS_OS_WINDOWS ? "NUL" : "/dev/null");
 
     /**
      * Shut down the Appium server identified by the specified registration by deleting
@@ -46,6 +44,9 @@ class PM2ShutdownStrategy implements ShutdownStrategy {
         try {
             ProcessBuilder pb = new ProcessBuilder(buildArgs("delete", pm2Name));
             pb.environment().put("PATH", PathUtils.getSystemPath());
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(PathUtils.DEV_NULL);
+
             int exitCode = pb.start().waitFor();
             if (exitCode == 0) {
                 LOGGER.debug("Deleted PM2 process: {}", pm2Name);
@@ -68,7 +69,7 @@ class PM2ShutdownStrategy implements ShutdownStrategy {
             ProcessBuilder pb = new ProcessBuilder(buildArgs("describe", pm2Name));
             pb.environment().put("PATH", PathUtils.getSystemPath());
             pb.redirectErrorStream(true);
-            pb.redirectOutput(DEV_NULL);
+            pb.redirectOutput(PathUtils.DEV_NULL);
             return pb.start().waitFor() == 0;
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();

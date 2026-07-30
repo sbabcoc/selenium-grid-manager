@@ -12,6 +12,7 @@ import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.sidecar.SidecarClient;
 import com.nordstrom.common.base.UncheckedThrow;
+import com.nordstrom.common.file.PathUtils;
 import com.nordstrom.common.uri.UriUtils;
 
 /**
@@ -39,7 +40,8 @@ public class LocalGridServer extends GridServer {
      * @param hubPort port of the hub for the Grid collection this server belongs to
      * @param builder {@link ProcessBuilder} for local Grid server process
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
-     * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
+     * @param outputPath {@link Path} to output log file; {@code null} to discard output rather than
+     *     leaving it unread — an unread process output pipe can fill and cause the process to hang
      * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
      */
     public LocalGridServer(String host, Integer port, boolean isHub, int hubPort,
@@ -53,10 +55,8 @@ public class LocalGridServer extends GridServer {
             builder.directory(workingPath.toFile());
         }
 
-        if (outputPath != null) {
-            builder.redirectOutput(outputPath.toFile());
-            builder.redirectErrorStream(true);
-        }
+        builder.redirectOutput(outputPath != null ? outputPath.toFile() : PathUtils.DEV_NULL);
+        builder.redirectErrorStream(true);
 
         this.builder = builder;
     }
