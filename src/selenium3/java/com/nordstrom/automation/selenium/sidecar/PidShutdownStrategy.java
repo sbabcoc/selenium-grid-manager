@@ -55,6 +55,9 @@ class PidShutdownStrategy implements ShutdownStrategy {
             }
             ProcessBuilder pb = new ProcessBuilder(args);
             pb.environment().put("PATH", PathUtils.getSystemPath());
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(PathUtils.DEV_NULL);
+
             int exitCode = pb.start().waitFor();
             if (exitCode == 0) {
                 LOGGER.debug("Terminated process {} for server at {}",

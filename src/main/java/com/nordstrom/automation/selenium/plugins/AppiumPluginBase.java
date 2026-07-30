@@ -195,14 +195,16 @@ public abstract class AppiumPluginBase implements ManagedDriverPlugin {
         argsList.add(0, executable);
         ProcessBuilder builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
+        builder.redirectErrorStream(true);
 
         try {
             Process process = builder.start();
-            process.waitFor();
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 nodeModulesRoot = reader.lines().parallel().collect(Collectors.joining("\n"));
             }
+
+            process.waitFor();
 
             int index = nodeModulesRoot.lastIndexOf('\n');
             if (index > 0) nodeModulesRoot = nodeModulesRoot.substring(index).trim();
