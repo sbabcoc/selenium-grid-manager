@@ -55,7 +55,7 @@ Typically, these tools must be on the system file path. However, you can provide
 Download the JAR and run it to extract the Gradle build files:
 
 ```bash
-java -jar selenium-grid-manager-36.4.3-s4.jar
+java -jar selenium-grid-manager-37.0.0-s4.jar
 ```
 
 This extracts the following files into the current directory:
@@ -154,7 +154,7 @@ This integration requires no configuration — simply include `selenium-grid-man
 <dependency>
     <groupId>com.nordstrom.ui-tools</groupId>
     <artifactId>selenium-grid-manager</artifactId>
-    <version>36.4.3-s4</version>
+    <version>37.0.0-s4</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -162,7 +162,7 @@ This integration requires no configuration — simply include `selenium-grid-man
 ### Gradle
 
 ```groovy
-testImplementation 'com.nordstrom.ui-tools:selenium-grid-manager:36.4.3-s4'
+testImplementation 'com.nordstrom.ui-tools:selenium-grid-manager:37.0.0-s4'
 ```
 
 ## Running the Unit Tests
