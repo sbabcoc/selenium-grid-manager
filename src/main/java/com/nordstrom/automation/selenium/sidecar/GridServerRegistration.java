@@ -35,9 +35,11 @@ public class GridServerRegistration {
     private final Integer pubPort;
     private final Integer subPort;
     private final URL lifecycleUrl;
+    private final String browserName;
 
     private GridServerRegistration(int hubPort, URL serverUrl, boolean isHub, int apiVersion,
-            ShutdownMode shutdownMode, Long pid, Integer pubPort, Integer subPort, URL lifecycleUrl) {
+            ShutdownMode shutdownMode, Long pid, Integer pubPort, Integer subPort, URL lifecycleUrl,
+            String browserName) {
         this.hubPort = hubPort;
         this.serverUrl = serverUrl;
         this.isHub = isHub;
@@ -47,6 +49,7 @@ public class GridServerRegistration {
         this.pubPort = pubPort;
         this.subPort = subPort;
         this.lifecycleUrl = lifecycleUrl;
+        this.browserName = browserName;
     }
 
     /**
@@ -60,7 +63,7 @@ public class GridServerRegistration {
      */
     public static GridServerRegistration forLifecycle(int hubPort, URL serverUrl, boolean isHub, URL lifecycleUrl) {
         return new GridServerRegistration(hubPort, serverUrl, isHub, 3,
-                ShutdownMode.LIFECYCLE, null, null, null, lifecycleUrl);
+                ShutdownMode.LIFECYCLE, null, null, null, lifecycleUrl, null);
     }
 
     /**
@@ -76,7 +79,7 @@ public class GridServerRegistration {
     public static GridServerRegistration forPidHub(int hubPort, URL serverUrl, long pid,
             int pubPort, int subPort) {
         return new GridServerRegistration(hubPort, serverUrl, true, 4,
-                ShutdownMode.PID, pid, pubPort, subPort, null);
+                ShutdownMode.PID, pid, pubPort, subPort, null, null);
     }
 
     /**
@@ -90,7 +93,7 @@ public class GridServerRegistration {
      */
     public static GridServerRegistration forPidNode(int hubPort, URL serverUrl, long pid) {
         return new GridServerRegistration(hubPort, serverUrl, false, 4,
-                ShutdownMode.PID, pid, null, null, null);
+                ShutdownMode.PID, pid, null, null, null, null);
     }
 
     /**
@@ -101,11 +104,12 @@ public class GridServerRegistration {
      * @param hubPort port of the hub for the Grid collection this server belongs to
      * @param serverUrl {@link URL} of the server
      * @param apiVersion Selenium API version (3 or 4)
+     * @param browserName name of the browser (e.g. "UiAutomator2") this server was launched for
      * @return {@link GridServerRegistration} for the specified server
      */
-    public static GridServerRegistration forAppiumPM2(int hubPort, URL serverUrl, int apiVersion) {
+    public static GridServerRegistration forAppiumPM2(int hubPort, URL serverUrl, int apiVersion, String browserName) {
         return new GridServerRegistration(hubPort, serverUrl, false, apiVersion,
-                ShutdownMode.PM2, null, null, null, null);
+                ShutdownMode.PM2, null, null, null, null, browserName);
     }
 
     /**
@@ -124,6 +128,7 @@ public class GridServerRegistration {
         if (pubPort != null) map.put("pubPort", pubPort);
         if (subPort != null) map.put("subPort", subPort);
         if (lifecycleUrl != null) map.put("lifecycleUrl", lifecycleUrl.toString());
+        if (browserName != null) map.put("browserName", browserName);
         return map;
     }
 
@@ -144,8 +149,9 @@ public class GridServerRegistration {
             Integer pubPort = map.containsKey("pubPort") ? ((Long) map.get("pubPort")).intValue() : null;
             Integer subPort = map.containsKey("subPort") ? ((Long) map.get("subPort")).intValue() : null;
             URL lifecycleUrl = map.containsKey("lifecycleUrl") ? new URL((String) map.get("lifecycleUrl")) : null;
+            String browserName = (String) map.get("browserName");
             return new GridServerRegistration(hubPort, serverUrl, isHub, apiVersion,
-                    shutdownMode, pid, pubPort, subPort, lifecycleUrl);
+                    shutdownMode, pid, pubPort, subPort, lifecycleUrl, browserName);
         } catch (MalformedURLException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
@@ -231,5 +237,14 @@ public class GridServerRegistration {
      */
     public URL getLifecycleUrl() {
         return lifecycleUrl;
+    }
+
+    /**
+     * Get the name of the driver plugin this server was launched for.
+     *
+     * @return browser name (e.g. "UiAutomator2"); {@code null} if not applicable
+     */
+    public String getBrowserName() {
+        return browserName;
     }
 }

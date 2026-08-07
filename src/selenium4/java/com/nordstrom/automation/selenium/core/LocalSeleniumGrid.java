@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 import org.openqa.selenium.net.PortProber;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
+import com.nordstrom.automation.selenium.DriverPlugin;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.PidHubRegistrationStrategy;
@@ -267,13 +268,13 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             int hubPort = resolvedHubUrl.getPort();
             hubServer = create(config, launcherClassName, dependencyContexts, true, hubPort, hubPort,
                     new PidHubRegistrationStrategy(hubPort - 2, hubPort - 1),
-                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true));
+                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true), null);
         } else {
             // nothing configured — allocate full bundle
             GridHubPortAllocator.GridPorts ports = GridHubPortAllocator.allocate();
             hubServer = create(config, launcherClassName, dependencyContexts, true, ports.hubPort, ports.hubPort,
                     new PidHubRegistrationStrategy(ports.eventBusPubPort, ports.eventBusSubPort),
-                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true));
+                    hubConfigPath, workingPath, LocalGridUtility.getOutputPath(config, true), null);
         }
         
         // store hub host and hub port in system properties for subsequent retrieval
@@ -288,7 +289,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // if creating new local Grid or active Grid doesn't include current driver plug-in
             if (seleniumGrid == null || !seleniumGrid.personalities.containsKey(driverPlugin.getBrowserName())) {
                 // create node server for this driver plug-in
-                GridServer nodeServer = driverPlugin.create(config, hubPort, launcherClassName, dependencyContexts,
+                GridServer nodeServer = driverPlugin.create(config, launcherClassName, dependencyContexts,
                         hubServer.getUrl(), workingPath);
                 // add server to nodes list
                 nodeServers.add(nodeServer);
@@ -299,7 +300,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
                     // add relay node for Appium Grid server to nodes list
                     nodeServers.add(create(config, launcherClassName, dependencyContexts, false, -1, hubPort,
                             new PidNodeRegistrationStrategy(), nodeConfigPath, workingPath,
-                            LocalGridUtility.getOutputPath(config, null)));
+                            LocalGridUtility.getOutputPath(config, null), null));
                     LOGGER.debug("Adding local Grid relay for Appium server providing personalities: {}",
                             nodeServer.getPersonalities().keySet());
                 } else {
@@ -352,6 +353,9 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * @param configPath {@link Path} to server configuration file
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
      * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
+     * @param driverPlugin {@link DriverPlugin} whose personalities and browser name this server
+     *        should expose; {@code null} for hub servers and Appium relay nodes, neither of
+     *        which has a directly associated driver
      * @param propertyNames optional array of property names to propagate to server process
      * @return {@link LocalGridServer} object for managing the server process
      */
@@ -360,7 +364,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             final boolean isHub, final Integer port, final int hubPort,
             final RegistrationStrategy registrationStrategy,
             final Path configPath, final Path workingPath, final Path outputPath,
-            final String... propertyNames) {
+            final DriverPlugin driverPlugin, final String... propertyNames) {
         
         List<String> argsList = new ArrayList<>();
         
@@ -424,7 +428,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         ProcessBuilder builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
         return new LocalGridServer(hostUrl, portNum, isHub, hubPort,
-                builder, workingPath, outputPath, registrationStrategy);
+                builder, workingPath, outputPath, registrationStrategy, driverPlugin);
     }
 
     /**

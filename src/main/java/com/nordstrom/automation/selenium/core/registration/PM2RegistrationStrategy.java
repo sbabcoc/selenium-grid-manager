@@ -31,6 +31,6 @@ public class PM2RegistrationStrategy implements RegistrationStrategy {
     @Override
     public void register(LocalGridServer server, Process process) {
         SidecarClient.register(GridServerRegistration.forAppiumPM2(
-                server.getHubPort(), server.getUrl(), apiVersion));
+                server.getHubPort(), server.getUrl(), apiVersion, server.getBrowserName()));
     }
 }

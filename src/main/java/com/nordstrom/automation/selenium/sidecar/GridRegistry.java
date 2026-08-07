@@ -149,6 +149,37 @@ public class GridRegistry {
     }
 
     /**
+     * Get the server registrations of the specified shutdown mode and browser name belonging to
+     * the grid collection on the specified hub port.
+     * <p>
+     * Used to resolve the specific Appium (PM2) server associated with a given driver/engine
+     * when a hub has more than one PM2-registered server — Appium itself provides no API to
+     * query a running server for the engine(s) it supports, so this association is tracked
+     * here at registration time instead.
+     *
+     * @param hubPort hub port of the grid collection to query
+     * @param mode {@link ShutdownMode} to filter by
+     * @param browserName browser name to filter by (e.g. "UiAutomator2")
+     * @return unmodifiable list of matching {@link GridServerRegistration} objects
+     *         (empty if none, or if {@code hubPort} is not currently managed)
+     */
+    public List<GridServerRegistration> getServersByModeAndDriver(int hubPort, ShutdownMode mode, String browserName) {
+        List<GridServerRegistration> servers = registrations.get(hubPort);
+        if (servers == null) {
+            return Collections.emptyList();
+        }
+        synchronized (servers) {
+            List<GridServerRegistration> matches = new ArrayList<>();
+            for (GridServerRegistration r : servers) {
+                if (r.getShutdownMode() == mode && browserName.equals(r.getBrowserName())) {
+                    matches.add(r);
+                }
+            }
+            return Collections.unmodifiableList(matches);
+        }
+    }
+
+    /**
      * Get the list of hub statuses for all managed grid collections.
      *
      * @return list of {@link HubStatus} objects for all managed hubs

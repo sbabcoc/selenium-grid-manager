@@ -16,6 +16,8 @@ import java.util.regex.Matcher;
 import org.apache.commons.lang3.SystemUtils;
 import org.openqa.selenium.grid.config.ConfigException;
 import org.openqa.selenium.json.Json;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.AppiumGridServer;
@@ -59,6 +61,8 @@ import com.nordstrom.common.file.PathUtils;
  */
 public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAppiumPlugin.class);
+
     /**
      * Base constructor for <b>Appium</b> plug-in objects.
      * 
@@ -73,9 +77,10 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public LocalGridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+    public LocalGridServer create(SeleniumConfig config, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath, Path outputPath) throws IOException {
         
+        int hubPort = hubUrl.getPort();
         String address;
         Integer portNum;
         List<String> argsList = new ArrayList<>();
@@ -100,6 +105,9 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
             int next = 0;
             int index = 0;
             boolean doLoop;
+            // name of the option whose value is being extracted in the current iteration
+            // (i.e. the option added — or skipped — in the *previous* iteration)
+            String pendingOption = null;
             
             // iterate over specifications
             for (String thisArg : cliArgs) {
@@ -110,15 +118,21 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
                 while (doLoop) {
                     // save list end index
                     index = argsList.size();
+                    String matchedOption = null;
                     
                     // if option found
                     if (matcher.find()) {
-                        // add option to args list
-                        argsList.add(matcher.group(1));
+                        matchedOption = matcher.group(1);
                         // set last value tail 
                         tail = matcher.start();
                         // save next value head
                         next = matcher.end() + 1;
+                        // 'default-capabilities' is deprecated in APPIUM_CLI_ARGS — its value is
+                        // redirected into APPIUM_DEFAULT_CAPS below instead of being added here
+                        if (!"--default-capabilities".equals(matchedOption)) {
+                            // add option to args list
+                            argsList.add(matchedOption);
+                        }
                     // otherwise
                     } else {
                         // set final value tail
@@ -134,15 +148,32 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
                         
                         // if value is defined
                         if ( ! value.isEmpty()) {
-                            // insert at saved index
-                            argsList.add(index, value);
+                            if ("--default-capabilities".equals(pendingOption)) {
+                                LOGGER.warn("Specifying '--default-capabilities' via {} is deprecated; "
+                                        + "use the {} setting instead",
+                                        SeleniumSettings.APPIUM_CLI_ARGS.key(),
+                                        SeleniumSettings.APPIUM_DEFAULT_CAPS.key());
+                                System.setProperty(SeleniumSettings.APPIUM_DEFAULT_CAPS.key(), value);
+                            } else {
+                                // insert at saved index
+                                argsList.add(index, value);
+                            }
                         }
                     }
                     
                     // advance
+                    pendingOption = matchedOption;
                     head = next;
                 }
             }
+        }
+        
+        // resolve default capabilities — client override, legacy APPIUM_CLI_ARGS redirect above,
+        // or the built-in skip-flags default — and apply once, as a launch-time Appium default
+        String defaultCaps = config.getString(SeleniumSettings.APPIUM_DEFAULT_CAPS.key());
+        if (defaultCaps != null && !defaultCaps.isEmpty()) {
+            argsList.add("--default-capabilities");
+            argsList.add(defaultCaps);
         }
         
         // extract address and port from relay configuration
@@ -220,6 +251,6 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         builder.environment().put(APPIUM_HOME, Optional.ofNullable(System.getenv(APPIUM_HOME))
                 .orElse(System.getProperty("user.home") + File.separator + ".appium"));
         return new AppiumGridServer(address, portNum, false, hubPort, builder, workingPath, null,
-                new PM2RegistrationStrategy(4));
+                new PM2RegistrationStrategy(4), this);
     }
 }

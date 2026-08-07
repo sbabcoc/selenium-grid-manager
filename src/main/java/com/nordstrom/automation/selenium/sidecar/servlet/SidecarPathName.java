@@ -31,4 +31,7 @@ public interface SidecarPathName {
 
     /** path: monitored grid removal */
     String UNMONITOR_PATH = "/grid/control/unmonitor";
+
+    /** path: device provisioning (Appium/UiAutomator2) */
+    String PROVISION_PATH = "/grid/control/provision";
 }
