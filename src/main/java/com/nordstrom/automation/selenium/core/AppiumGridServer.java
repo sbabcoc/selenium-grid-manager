@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.commons.lang3.SystemUtils;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
+import com.nordstrom.automation.selenium.DriverPlugin;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.common.file.PathUtils;
@@ -38,11 +39,12 @@ public class AppiumGridServer extends LocalGridServer {
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
      * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
      * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
+     * @param driverPlugin {@link DriverPlugin} whose personalities and browser name this server should expose
      */
     public AppiumGridServer(String host, Integer port, boolean isHub, int hubPort,
             ProcessBuilder builder, Path workingPath, Path outputPath,
-            RegistrationStrategy registrationStrategy) {
-        super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy);
+            RegistrationStrategy registrationStrategy, DriverPlugin driverPlugin) {
+        super(host, port, isHub, hubPort, builder, workingPath, outputPath, registrationStrategy, driverPlugin);
         this.statusPath = "/status"; // status path is not version-specific
     }
 

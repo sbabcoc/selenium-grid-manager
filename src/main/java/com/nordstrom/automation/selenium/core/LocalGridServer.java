@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.nordstrom.automation.selenium.DriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.RegistrationStrategy;
 import com.nordstrom.automation.selenium.sidecar.SidecarClient;
@@ -29,7 +30,8 @@ public class LocalGridServer extends GridServer {
     private boolean hasStarted = false;
     private boolean isActive = false;
     private final int hubPort;
-    private final Map<String, String> personalities = new HashMap<>();
+    private final Map<String, String> personalities;
+    private final String browserName;
 
     /**
      * Constructor for local Grid server object.
@@ -43,13 +45,19 @@ public class LocalGridServer extends GridServer {
      * @param outputPath {@link Path} to output log file; {@code null} to discard output rather than
      *     leaving it unread — an unread process output pipe can fill and cause the process to hang
      * @param registrationStrategy {@link RegistrationStrategy} for registering this server with the sidecar
+     * @param driverPlugin {@link DriverPlugin} whose personalities and browser name this server should
+     *     expose; {@code null} for hub servers, which have no associated driver
      */
     public LocalGridServer(String host, Integer port, boolean isHub, int hubPort,
             ProcessBuilder builder, Path workingPath, Path outputPath,
-            RegistrationStrategy registrationStrategy) {
+            RegistrationStrategy registrationStrategy, DriverPlugin driverPlugin) {
         super(getServerUrl(host, port), isHub);
         this.hubPort = hubPort;
         this.registrationStrategy = registrationStrategy;
+        this.personalities = (driverPlugin != null)
+                ? new HashMap<>(driverPlugin.getPersonalities())
+                : new HashMap<>();
+        this.browserName = (driverPlugin != null) ? driverPlugin.getBrowserName() : null;
 
         if (workingPath != null) {
             builder.directory(workingPath.toFile());
@@ -87,6 +95,15 @@ public class LocalGridServer extends GridServer {
     @Override
     public Map<String, String> getPersonalities() {
         return personalities;
+    }
+
+    /**
+     * Get the name of the browser this server was launched for.
+     *
+     * @return browser name (e.g. "UiAutomator2"); {@code null} for hub servers
+     */
+    public String getBrowserName() {
+        return browserName;
     }
 
     /**

@@ -51,16 +51,17 @@ public abstract class RemoteWebDriverPlugin implements ManagedDriverPlugin {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public GridServer create(SeleniumConfig config, int hubPort, String launcherClassName,
+    public GridServer create(SeleniumConfig config, String launcherClassName,
             String[] dependencyContexts, URL hubUrl, Path workingPath,
             Path outputPath) throws IOException {
+        int hubPort = hubUrl.getPort();
         String[] combinedContexts = combineDependencyContexts(dependencyContexts, this);
         String capabilities = getCapabilities(config);
         Path nodeConfigPath = GridConfigFactoryImpl.INSTANCE.createNodeConfig(config, capabilities, hubUrl);
         String[] propertyNames = getPropertyNames(capabilities);
         return LocalSeleniumGrid.create(config, launcherClassName, combinedContexts,
                 false, -1, hubPort, getRegistrationStrategy(config),
-                nodeConfigPath, workingPath, outputPath, propertyNames);
+                nodeConfigPath, workingPath, outputPath, this, propertyNames);
     }
 
     /**

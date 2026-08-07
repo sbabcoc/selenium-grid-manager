@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 import org.openqa.selenium.net.PortProber;
 
 import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings;
+import com.nordstrom.automation.selenium.DriverPlugin;
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
 import com.nordstrom.automation.selenium.SeleniumConfig;
 import com.nordstrom.automation.selenium.core.registration.LifecycleRegistrationStrategy;
@@ -238,20 +239,19 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             int hubPort = resolvedHubUrl.getPort();
             hubServer = create(config, launcherClassName, dependencyContexts, true, hubPort, hubPort,
                     new LifecycleRegistrationStrategy(), hubConfigPath, workingPath,
-                    LocalGridUtility.getOutputPath(config, true));
+                    LocalGridUtility.getOutputPath(config, true), null);
         } else {
             // nothing configured — allocate hub port
             int hubPort = GridHubPortAllocator.allocateHub();
             hubServer = create(config, launcherClassName, dependencyContexts, true, hubPort, hubPort,
                     new LifecycleRegistrationStrategy(), hubConfigPath, workingPath,
-                    LocalGridUtility.getOutputPath(config, true));
+                    LocalGridUtility.getOutputPath(config, true), null);
         }
 
         // store hub host and hub port in system properties for subsequent retrieval
         System.setProperty(SeleniumSettings.HUB_HOST.key(), hubServer.getUrl().toString());
         System.setProperty(SeleniumSettings.HUB_PORT.key(), Integer.toString(hubServer.getUrl().getPort()));
 
-        final int hubPort = hubServer.getUrl().getPort();
         List<GridServer> nodeServers = new ArrayList<>();
         
         // iterate over configured driver plugins
@@ -259,7 +259,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // if creating new local Grid or active Grid doesn't include current driver plug-in
             if (seleniumGrid == null || !seleniumGrid.personalities.containsKey(driverPlugin.getBrowserName())) {
                 // add server for this driver plug-in to nodes list
-                nodeServers.add(driverPlugin.create(config, hubPort, launcherClassName, dependencyContexts,
+                nodeServers.add(driverPlugin.create(config, launcherClassName, dependencyContexts,
                         hubServer.getUrl(), workingPath));
             }
         }
@@ -307,6 +307,8 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      * @param configPath {@link Path} to server configuration file
      * @param workingPath {@link Path} of working directory for server process; {@code null} for default
      * @param outputPath {@link Path} to output log file; {@code null} to decline log-to-file
+     * @param driverPlugin {@link DriverPlugin} whose personalities and browser name this server
+     *        should expose; {@code null} for hub servers, which have no associated driver
      * @param propertyNames optional array of property names to propagate to server process
      * @return {@link LocalGridServer} object for managing the server process
      */
@@ -315,7 +317,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             final boolean isHub, final Integer port, final int hubPort,
             final RegistrationStrategy registrationStrategy,
             final Path configPath, final Path workingPath, final Path outputPath,
-            final String... propertyNames) {
+            final DriverPlugin driverPlugin, final String... propertyNames) {
 
         List<String> argsList = new ArrayList<>();
         
@@ -380,7 +382,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
         ProcessBuilder builder = new ProcessBuilder(argsList);
         builder.environment().put("PATH", PathUtils.getSystemPath());
         return new LocalGridServer(hostUrl, portNum, isHub, hubPort,
-                builder, workingPath, outputPath, registrationStrategy);
+                builder, workingPath, outputPath, registrationStrategy, driverPlugin);
     }
 
     /**
