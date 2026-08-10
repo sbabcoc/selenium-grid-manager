@@ -3,6 +3,8 @@ package com.nordstrom.automation.selenium.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +77,7 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         String address;
         Integer portNum;
         List<String> argsList = new ArrayList<>();
+        String winQuote = (SystemUtils.IS_OS_WINDOWS) ? "\"" : "";
         
         // create node configuration for this plug-in
         Path nodeConfigPath = GridConfigFactoryImpl.INSTANCE.createNodeConfig(config, getCapabilities(config), hubUrl);
@@ -152,11 +155,19 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         }
         
         // resolve default capabilities — client override, legacy APPIUM_CLI_ARGS redirect above,
-        // or the built-in skip-flags default — and apply once, as a launch-time Appium default
+        // or the built-in skip-flags default — and apply once, as a launch-time Appium default.
         String defaultCaps = config.getString(SeleniumSettings.APPIUM_DEFAULT_CAPS.key());
         if (defaultCaps != null && !defaultCaps.isEmpty()) {
+            // Appium accepts a path to a JSON file as the --default-capabilities value, in addition
+            // to raw JSON. Using a file avoids ever placing a value containing embedded double-quote
+            // characters on the command line at all — side-stepping both Windows cmd.exe's nested
+            // quoting behavior and PM2's own internal re-serialization of CLI arguments before it
+            // spawns the target process, neither of which reliably preserves literal quote characters
+            // embedded in a single argument value.
+            Path defaultCapsPath = Files.createTempFile("appium-default-caps-", ".json");
+            Files.write(defaultCapsPath, defaultCaps.getBytes(StandardCharsets.UTF_8));
             argsList.add("--default-capabilities");
-            argsList.add(defaultCaps);
+            argsList.add(winQuote + defaultCapsPath.toString() + winQuote);
         }
         
         // get 'localhost' and free port
@@ -169,7 +180,7 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         
         // add 'nodeconfig' path
         argsList.add("--nodeconfig");
-        argsList.add(nodeConfigPath.toString());
+        argsList.add(winQuote + nodeConfigPath.toString() + winQuote);
         
         // specify server port
         argsList.add(0, portNum.toString());
@@ -188,14 +199,13 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         String appiumBinaryPath = findMainScript().getAbsolutePath();
         
         File pm2Binary = NodeBinaryFinder.findPM2Binary().getAbsoluteFile();
-        String winQuote = (SystemUtils.IS_OS_WINDOWS) ? "\"" : "";
         
         argsList.add(0, "--");
         
         // if capturing output
         if (outputPath != null) {
             // specify 'pm2' log output path
-            argsList.add(0, winQuote + outputPath + winQuote);
+            argsList.add(0, winQuote + outputPath.toString() + winQuote);
             argsList.add(0, "--log");
         }
         
@@ -207,6 +217,15 @@ public abstract class AbstractAppiumPlugin extends AppiumPluginBase {
         argsList.add(0, winQuote + appiumBinaryPath + winQuote);
         argsList.add(0, "start");
         
+        // This is the original pre-refactor pattern: on Windows, join every token into one
+        // string and wrap it in a single outer quote pair for `cmd.exe /c "<command>"`.
+        // cmd.exe's own /c parsing does not reliably support multiple separate trailing
+        // arguments the way a normal argv-respecting program does, so joining into one
+        // string here — rather than passing separate ProcessBuilder array elements — is
+        // the correct, working shape. This is safe now that --default-capabilities carries
+        // a plain file path rather than raw JSON: no argument in this list contains an
+        // embedded double-quote character, so there's nothing to conflict with the
+        // per-token winQuote wrapping or the outer wrap below.
         String executable;
         if (SystemUtils.IS_OS_WINDOWS) {
             argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
