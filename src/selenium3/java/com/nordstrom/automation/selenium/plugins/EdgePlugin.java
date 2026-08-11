@@ -50,7 +50,7 @@ public class EdgePlugin extends RemoteWebDriverPlugin {
      */
     @Override
     public Map<String, String> getPersonalities() {
-        return EdgeCaps.getPersonalities();
+        return EdgeCaps.getPersonalities_S3();
     }
 
     /**

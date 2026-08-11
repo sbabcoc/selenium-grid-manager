@@ -45,24 +45,39 @@ public class EdgeCaps {
     private static final String CAPABILITIES =
             "{\"browserName\":\"MicrosoftEdge\"}";
     
-    private static final String BASELINE = 
+    private static final String BASELINE_S3 = 
             "{\"browserName\":\"MicrosoftEdge\",\"ms:edgeChromium\":true," +
              "\"nord:options\":{\"personality\":\"MicrosoftEdge\"," +
                                "\"pluginClass\":\"com.nordstrom.automation.selenium.plugins.EdgePlugin\"}}";
     
-    private static final String HEADLESS =
+    private static final String HEADLESS_S3 =
             "{\"browserName\":\"MicrosoftEdge\",\"ms:edgeChromium\":true," +
              "\"ms:edgeOptions\":{\"args\":[\"--headless\",\"--disable-gpu\"]}," +
              "\"nord:options\":{\"personality\":\"MicrosoftEdge.headless\"," +
                                "\"pluginClass\":\"com.nordstrom.automation.selenium.plugins.EdgePlugin\"}}";
 
-    private static final Map<String, String> PERSONALITIES;
+    private static final String BASELINE_S4 = 
+            "{\"browserName\":\"MicrosoftEdge\"," +
+             "\"nord:options\":{\"personality\":\"MicrosoftEdge\"," +
+                               "\"pluginClass\":\"com.nordstrom.automation.selenium.plugins.EdgePlugin\"}}";
+    
+    private static final String HEADLESS_S4 =
+            "{\"browserName\":\"MicrosoftEdge\"," +
+             "\"ms:edgeOptions\":{\"args\":[\"--headless\",\"--disable-gpu\"]}," +
+             "\"nord:options\":{\"personality\":\"MicrosoftEdge.headless\"," +
+                               "\"pluginClass\":\"com.nordstrom.automation.selenium.plugins.EdgePlugin\"}}";
+
+    private static final Map<String, String> PERSONALITIES_S3;
+    private static final Map<String, String> PERSONALITIES_S4;
     
     static {
         Map<String, String> personalities = new HashMap<>();
-        personalities.put(DRIVER_NAME, BASELINE);
-        personalities.put(DRIVER_NAME + ".headless", HEADLESS);
-        PERSONALITIES = Collections.unmodifiableMap(personalities);
+        personalities.put(DRIVER_NAME, BASELINE_S3);
+        personalities.put(DRIVER_NAME + ".headless", HEADLESS_S3);
+        PERSONALITIES_S3 = Collections.unmodifiableMap(personalities);
+        personalities.put(DRIVER_NAME, BASELINE_S4);
+        personalities.put(DRIVER_NAME + ".headless", HEADLESS_S4);
+        PERSONALITIES_S4 = Collections.unmodifiableMap(personalities);
     }
     
     /**
@@ -75,12 +90,21 @@ public class EdgeCaps {
     }
 
     /**
-     * Get browser "personalities" provided by this plug-in.
+     * Get browser "personalities" provided by this plug-in for Selenium 3.
      * 
      * @return map of JSON {@link org.openqa.selenium.Capabilities Capabilities} objects keyed by "personality" name
      */
-    public static Map<String, String> getPersonalities() {
-        return PERSONALITIES;
+    public static Map<String, String> getPersonalities_S3() {
+    	return PERSONALITIES_S3;
+    }
+    
+    /**
+     * Get browser "personalities" provided by this plug-in for Selenium 4.
+     * 
+     * @return map of JSON {@link org.openqa.selenium.Capabilities Capabilities} objects keyed by "personality" name
+     */
+    public static Map<String, String> getPersonalities_S4() {
+    	return PERSONALITIES_S4;
     }
     
     /**
