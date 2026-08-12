@@ -40,7 +40,23 @@ tasks.register('runGrid', JavaExec) {
     group = 'Application'
     description = 'Launch a local Selenium Grid instance'
 
-    def selfJar = files("${archiveBase}.jar")
+    // Two supported layouts:
+    //  - sandbox (installed via the Install class): the jar sits flat, right
+    //    next to this script — used as-is, never rebuilt (this layout has no
+    //    src/main/java to build from).
+    //  - dev repo (this build.gradle applied directly): the jar task follows
+    //    Gradle's own convention and places its output under build/libs/ —
+    //    build it first via the 'jar' task dependency, then reference it there.
+    def flatJarFile = project.file("${archiveBase}.jar")
+    def useFlatJar = flatJarFile.exists()
+
+    def selfJar
+    if (useFlatJar) {
+        selfJar = files(flatJarFile)
+    } else {
+        dependsOn tasks.named('jar')
+        selfJar = files(tasks.named('jar').flatMap { it.archiveFile })
+    }
 
     // parse selected browsers from -Pbrowsers=chrome,firefox
     def selectedBrowsers = (project.findProperty('browsers') ?: '')

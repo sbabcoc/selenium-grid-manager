@@ -84,6 +84,8 @@ bin/
 test-output/
 surefire-reports/
 failsafe-reports/
+*-s3.json
+*-s4.json
 *-s3-*.json
 *-s4-*.json
 
