@@ -104,6 +104,8 @@ public class GridConfigFactoryImpl implements GridConfigFactory {
             nodeOptions.computeIfAbsent("detect-drivers", k -> false);
             // if Appium
             if (isAppium) {
+                // set max sessions to 1
+                nodeOptions.computeIfAbsent("max-sessions", k -> 1);
                 // create relay configuration template if absent
                 Map<String, Object> relayOptions = (Map<String, Object>) nodeConfig.computeIfAbsent(
                         "relay", k -> new HashMap<>());
