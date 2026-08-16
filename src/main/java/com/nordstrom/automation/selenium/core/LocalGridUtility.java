@@ -1,14 +1,18 @@
 package com.nordstrom.automation.selenium.core;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.openqa.selenium.net.PortProber;
 
 import com.nordstrom.automation.selenium.ManagedDriverPlugin;
@@ -17,6 +21,7 @@ import com.nordstrom.automation.selenium.AbstractSeleniumConfig.SeleniumSettings
 import com.nordstrom.automation.selenium.exceptions.GridServerLaunchFailedException;
 import com.nordstrom.automation.selenium.grid.GridApiProvider;
 import com.nordstrom.automation.selenium.grid.GridApiProviderRegistry;
+import com.nordstrom.automation.selenium.utility.NodeBinaryFinder;
 import com.nordstrom.common.file.PathUtils;
 
 /**
@@ -65,13 +70,35 @@ public final class LocalGridUtility {
                 if (!logsPath.toFile().exists()) {
                     Files.createDirectories(logsPath);
                 }
-                outputPath = PathUtils.getNextPath(logsPath, "grid-" + gridRole, "log");
+                outputPath = reserveNextPath(logsPath, "grid-" + gridRole, "log");
             } catch (IOException e) {
                 throw new GridServerLaunchFailedException(gridRole, e);
             }
         }
 
         return outputPath;
+    }
+    
+    /**
+     * Atomically reserve the next available numbered path for the given prefix/extension,
+     * closing the race window between selecting a name and a file existing at that name.
+     *
+     * @param logsPath directory to search
+     * @param prefix file name prefix
+     * @param ext file extension
+     * @return reserved (empty, already-created) path
+     * @throws IOException if an I/O error occurs
+     */
+    private static Path reserveNextPath(Path logsPath, String prefix, String ext) throws IOException {
+        while (true) {
+            Path candidate = PathUtils.getNextPath(logsPath, prefix, ext);
+            try {
+                Files.createFile(candidate);
+                return candidate;
+            } catch (FileAlreadyExistsException e) {
+                // another launch claimed this name between scan and create — retry
+            }
+        }
     }
 
     /**
@@ -122,4 +149,43 @@ public final class LocalGridUtility {
         }
     }
     
+    /**
+     * Ensure the PM2 daemon is running and stable before launching any PM2-managed
+     * servers.
+     * <p>
+     * Launching multiple {@code pm2 start} commands in quick succession, before any
+     * PM2 daemon yet exists, can cause them to race to bootstrap competing daemon
+     * instances — registrations against whichever instance loses that race are
+     * silently dropped. A single blocking call here, ahead of any real launches,
+     * closes that window.
+     */
+    public static void primePm2Daemon() {
+        File pm2Binary = NodeBinaryFinder.findPM2Binary().getAbsoluteFile();
+        List<String> argsList = new ArrayList<>();
+        argsList.add("ping");
+
+        String executable;
+        if (SystemUtils.IS_OS_WINDOWS) {
+            executable = "cmd.exe";
+            argsList.add(0, "\"" + pm2Binary.getAbsolutePath() + "\"");
+            argsList.add(0, "/c");
+        } else {
+            executable = pm2Binary.getAbsolutePath();
+        }
+        argsList.add(0, executable);
+
+        ProcessBuilder builder = new ProcessBuilder(argsList);
+        builder.environment().put("PATH", PathUtils.getSystemPath());
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(PathUtils.DEV_NULL);
+
+        try {
+            builder.start().waitFor();
+        } catch (IOException e) {
+            throw new GridServerLaunchFailedException("pm2", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GridServerLaunchFailedException("pm2", e);
+        }
+    }
 }

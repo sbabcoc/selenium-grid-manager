@@ -99,6 +99,7 @@ public class GridConfigFactoryImpl implements GridConfigFactory {
     @Override
     public Path createNodeConfig(SeleniumConfig config, String capabilities, URL hubUrl)
             throws IOException {
+        boolean isAppium = capabilities.contains("appium");
         // get path to node configuration template
         String nodeConfigPath = getNodeConfigPath(config).toString();
         // create node configuration from template
@@ -145,6 +146,9 @@ public class GridConfigFactoryImpl implements GridConfigFactory {
             nodeConfig.capabilities = capabilitiesList;
             nodeConfig.hubHost = hubUrl.getHost();
             nodeConfig.hubPort = hubUrl.getPort();
+            if (isAppium) {
+                nodeConfig.maxSession = 1;
+            }
             nodeConfig.servlets = Arrays.asList(servlets.toArray(new String[0]));
             try (OutputStream fos = new FileOutputStream(filePath.toFile());
                  OutputStream out = new BufferedOutputStream(fos)) {

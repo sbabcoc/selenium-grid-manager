@@ -146,15 +146,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
      */
     @Override
     public void activate() throws IOException, InterruptedException, TimeoutException {
-        GridServer hubServer = getHubServer();
-        Collection<GridServer> nodeServers = getNodeServers().values();
-        
-        hubServer.start();
-        for (GridServer nodeServer : nodeServers) {
-            nodeServer.start();
-        }
-        
-        awaitGridReady(hubServer, nodeServers);
+        startGrid(getHubServer(), getNodeServers().values());
     }
 
     /**
@@ -170,6 +162,36 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             if (!nodeServer.isActive()) return false;
         }
         return true;
+    }
+    
+    /**
+     * Start the hub server (if not already active), prime PM2 if needed, then
+     * start every node server and wait for the grid to become ready.
+     *
+     * @param hubServer hub server for this Grid collection
+     * @param nodeServers node servers for this Grid collection
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if this thread was interrupted
+     * @throws TimeoutException if host timeout interval exceeded
+     */
+    private static void startGrid(GridServer hubServer, Collection<GridServer> nodeServers)
+            throws IOException, InterruptedException, TimeoutException {
+        hubServer.start();
+        
+        boolean hasActiveAppium = nodeServers.stream()
+                .anyMatch(ns -> ns instanceof AppiumGridServer && ns.isActive());
+        boolean hasInactiveAppium = nodeServers.stream()
+                .anyMatch(ns -> ns instanceof AppiumGridServer && !ns.isActive());
+        
+        if (hasInactiveAppium && !hasActiveAppium) {
+            LocalGridUtility.primePm2Daemon();
+        }
+        
+        for (GridServer nodeServer : nodeServers) {
+            nodeServer.start();
+        }
+        
+        awaitGridReady(hubServer, nodeServers);
     }
     
     /**
@@ -318,10 +340,7 @@ public class LocalSeleniumGrid extends SeleniumGrid {
             // otherwise (local nodes added)
             } else {
                 try {
-                    for (GridServer nodeServer : nodeServers) {
-                        nodeServer.start();
-                    }
-                    awaitGridReady(hubServer, nodeServers);
+                    startGrid(hubServer, nodeServers);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException("Interrupted activating new local nodes", e);
