@@ -104,6 +104,7 @@ public class SidecarManager {
             servlets.add(examplePageClass + "$FrameB_Servlet");
             servlets.add(examplePageClass + "$FrameC_Servlet");
             servlets.add(examplePageClass + "$FrameD_Servlet");
+            servlets.add(examplePageClass + "$FrameE_Servlet");
             LOGGER.debug("Example page site added to sidecar at {}", ExamplePagePathName.EXAMPLE_PAGE_PATH);
         }
 
