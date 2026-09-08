@@ -24,6 +24,8 @@ public class InternetExplorerCaps {
     public static final String DRIVER_NAME = "internet explorer";
     /** driver path system property */
     public static final String DRIVER_PATH = "webdriver.ie.driver";
+    /** driver path environment variable */
+    public static final String DRIVER_PATH_ENV = "SE_IEDRIVER";
     /** log file path system property */
     public static final String LOGFILE_PATH = "webdriver.ie.driver.logfile";
     /** log level system property */
@@ -88,7 +90,7 @@ public class InternetExplorerCaps {
      */
     public static String[] getPropertyNames(String capabilities) {
         try {
-            File driverPath = DriverBinaryFinder.findDriver(capabilities);
+            File driverPath = DriverBinaryFinder.findDriver(capabilities, DRIVER_PATH, DRIVER_PATH_ENV);
             System.setProperty(DRIVER_PATH, driverPath.getAbsolutePath());
         } catch (IllegalStateException e) {
             throw new DriverExecutableNotFoundException(DRIVER_PATH);

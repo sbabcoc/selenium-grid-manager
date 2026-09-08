@@ -24,6 +24,8 @@ public class FirefoxCaps {
     public static final String DRIVER_NAME = "firefox";
     /** driver path system property */
     public static final String DRIVER_PATH = "webdriver.gecko.driver";
+    /** driver path environment variable */
+    public static final String DRIVER_PATH_ENV = "SE_GECKODRIVER";
     /** browser binary path system property */
     public static final String BINARY_PATH = "webdriver.firefox.bin";
     /** log file path system property */
@@ -91,7 +93,7 @@ public class FirefoxCaps {
      */
     public static String[] getPropertyNames(String capabilities) {
         try {
-            File driverPath = DriverBinaryFinder.findDriver(capabilities);
+            File driverPath = DriverBinaryFinder.findDriver(capabilities, DRIVER_PATH, DRIVER_PATH_ENV);
             System.setProperty(DRIVER_PATH, driverPath.getAbsolutePath());
         } catch (IllegalStateException e) {
             throw new DriverExecutableNotFoundException(DRIVER_PATH);
