@@ -3,7 +3,7 @@ package com.nordstrom.automation.selenium.exceptions;
 import com.nordstrom.automation.selenium.utility.DriverBinaryFinder;
 
 /**
- * This exception is associated with the {@link DriverBinaryFinder#findDriver(String)} method and indicates that a
+ * This exception is associated with the {@link DriverBinaryFinder#findDriver(String, String, String)} method and indicates that a
  * driver matching the specified capabilities could not be acquired.
  */
 public class DriverExecutableNotFoundException extends SeleniumFoundationException {
